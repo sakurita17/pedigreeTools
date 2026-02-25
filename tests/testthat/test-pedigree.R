@@ -27,16 +27,25 @@ test_that("test inbreeding()", {
     expect_equal(FEst, FExp, tolerance = .Machine$double.eps)
 })
 
-test_that("test getD()", {
+test_that("test Mendelian sampling variance: getD() & getDinv()", {
     ped <- pedigree(
         sire = c(NA, NA, 1, 1, 4, 5),
         dam = c(NA, NA, 2, NA, 3, 2),
         label = 1:6
     )
 
-    DEst <- getD(ped)
+    D <- getD(ped)
+    DInv <- getDInv(ped)
+
+    # Test for correctness
     DExp <- c(1.00, 1.00, 0.50, 0.75, 0.50, 0.46875)
     names(DExp) <- as.character(1:6)
+    expect_equal(D, DExp, tolerance = .Machine$double.eps)
 
-    expect_equal(DEst, DExp, tolerance = .Machine$double.eps)
+    DInvExp <- 1 / DExp
+    names(DInvExp) <- as.character(1:6)
+    expect_equal(DInv, DInvExp, tolerance = .Machine$double.eps)
 })
+
+
+
