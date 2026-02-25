@@ -13,3 +13,30 @@ test_that("ped2DF(), pedigree to data frame", {
 
   expect_error(ped2DF())
 })
+
+test_that("test inbreeding()", {
+    ped <- pedigree(
+        sire = c(NA, NA, 1, 1, 4, 5),
+        dam = c(NA, NA, 2, NA, 3, 2),
+        label = 1:6
+    )
+
+    FEst <- inbreeding(ped)
+    FExp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125)
+
+    expect_equal(FEst, FExp, tolerance = .Machine$double.eps)
+})
+
+test_that("test getD()", {
+    ped <- pedigree(
+        sire = c(NA, NA, 1, 1, 4, 5),
+        dam = c(NA, NA, 2, NA, 3, 2),
+        label = 1:6
+    )
+
+    DEst <- getD(ped)
+    DExp <- c(1.00, 1.00, 0.50, 0.75, 0.50, 0.46875)
+    names(DExp) <- as.character(1:6)
+
+    expect_equal(DEst, DExp, tolerance = .Machine$double.eps)
+})
