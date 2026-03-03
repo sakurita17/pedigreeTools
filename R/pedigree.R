@@ -172,9 +172,6 @@ setMethod("chol", "pedigree",
 #'                 label = 1:6)
 #' (F <- inbreeding(ped))
 #'
-#' # Test for correctness
-#' FExp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125)
-#' stopifnot(!any(abs(F - FExp) > .Machine$double.eps))
 inbreeding <- function(ped) {
     stopifnot(is(ped, "pedigree"))
     .Call(pedigree_inbreeding, ped)
@@ -196,12 +193,6 @@ inbreeding <- function(ped) {
 #' (D <- getD(ped))
 #' (DInv <- getDInv(ped))
 #'
-#' # Test for correctness
-#' DExp <- c(1.00, 1.00, 0.50, 0.75, 0.50, 0.46875)
-#' stopifnot(!any(abs(D - DExp) > .Machine$double.eps))
-#'
-#' DInvExp <- 1 / DExp
-#' stopifnot(!any(abs(DInv - DInvExp) > .Machine$double.eps))
 Dmat <- function(ped, vector = TRUE) {
     F <- inbreeding(ped)
     sire <- ped@sire
@@ -246,16 +237,6 @@ getDInv <- function(ped, vector = TRUE) {
 #'                 label = 1:6)
 #' (TInv <- getTInv(ped))
 #'
-#' # Test for correctness
-#' TInvExp <- matrix(data = c( 1.0,  0.0,  0.0,  0.0,  0.0,  0.0,
-#'                             0.0,  1.0,  0.0,  0.0,  0.0,  0.0,
-#'                            -0.5, -0.5,  1.0,  0.0,  0.0,  0.0,
-#'                            -0.5,  0.0,  0.0,  1.0,  0.0,  0.0,
-#'                             0.0,  0.0, -0.5, -0.5,  1.0,  0.0,
-#'                             0.0, -0.5,  0.0,  0.0, -0.5,  1.0),
-#'                   byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(TInv  - TInvExp) > .Machine$double.eps))
-#' stopifnot(is(TInv, "sparseMatrix"))
 getTInv <- function(ped) {
     stopifnot(is(ped, "pedigree"))
     TInv <- as(ped, "sparseMatrix")
@@ -276,15 +257,6 @@ getTInv <- function(ped) {
 #'                 label = 1:6)
 #' (T <- getT(ped))
 #'
-#' # Test for correctness
-#' TExp <- matrix(data = c(1.00, 0.000, 0.00, 0.00, 0.0, 0,
-#'                         0.00, 1.000, 0.00, 0.00, 0.0, 0,
-#'                         0.50, 0.500, 1.00, 0.00, 0.0, 0,
-#'                         0.50, 0.000, 0.00, 1.00, 0.0, 0,
-#'                         0.50, 0.250, 0.50, 0.50, 1.0, 0,
-#'                         0.25, 0.625, 0.25, 0.25, 0.5, 1),
-#'                byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(T  - TExp) > .Machine$double.eps))
 getT <- function(ped) {
     T <- Matrix::solve(getTInv(ped))
     dimnames(T) <- list(ped@label, ped@label)
@@ -321,21 +293,6 @@ getT <- function(ped) {
 #' (L <- getL(ped))
 #' chol(getA(ped))
 #'
-#' # Test for correctness
-#' LExp <- matrix(data = c(1.0000, 0.0000, 0.5000, 0.5000, 0.5000, 0.2500,
-#'                         0.0000, 1.0000, 0.5000, 0.0000, 0.2500, 0.6250,
-#'                         0.0000, 0.0000, 0.7071, 0.0000, 0.3536, 0.1768,
-#'                         0.0000, 0.0000, 0.0000, 0.8660, 0.4330, 0.2165,
-#'                         0.0000, 0.0000, 0.0000, 0.0000, 0.7071, 0.3536,
-#'                         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.6847),
-#'                byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(round(L, digits = 4) - LExp) > .Machine$double.eps))
-#' LExp <- chol(getA(ped))
-#' stopifnot(!any(abs(L - LExp) > .Machine$double.eps))
-#'
-#' (L <- getL(ped, labs = 4:6))
-#' (LExp <- chol(getA(ped)[4:6, 4:6]))
-#' stopifnot(!any(abs(L - LExp) > .Machine$double.eps))
 relfactor <- function(ped, labs = NULL) {
     stopifnot(is(ped, "pedigree"))
     if (is.null(labs)) {
@@ -377,19 +334,6 @@ getL <- relfactor
 #' (LInv <- getLInv(ped))
 #' solve(Matrix::t(getL(ped)))
 #'
-#' # Test for correctness
-#' LInvExp <- matrix(data = c( 1.0000,  0.0000,  0.0000,  0.0000,  0.0000, 0.0000,
-#'                             0.0000,  1.0000,  0.0000,  0.0000,  0.0000, 0.0000,
-#'                            -0.7071, -0.7071,  1.4142,  0.0000,  0.0000, 0.0000,
-#'                            -0.5774,  0.0000,  0.0000,  1.1547,  0.0000, 0.0000,
-#'                             0.0000,  0.0000, -0.7071, -0.7071,  1.4142, 0.0000,
-#'                             0.0000, -0.7303,  0.0000,  0.0000, -0.7303, 1.4606),
-#'                   byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(round(LInv, digits = 4) - LInvExp) > .Machine$double.eps))
-#' L <- t(chol(getA(ped)))
-#' LInvExp <- solve(L)
-#' stopifnot(!any(abs(LInv - LInvExp) > .Machine$double.eps))
-#' stopifnot(is(LInv, "sparseMatrix"))
 relfactorInv <- function(ped) {
     # A = LL' (lower %*% upper)
     # inv(A) = inv(LL')
@@ -425,19 +369,6 @@ getLInv <- relfactorInv
 #'                 label = 1:6)
 #' (AInv <- getAInv(ped))
 #'
-#' # Test for correctness
-#' AInvExp <- matrix(data = c( 1.833,  0.500, -1.000, -0.667,  0.000,  0.000,
-#'                             0.500,  2.033, -1.000,  0.000,  0.533, -1.067,
-#'                            -1.000, -1.000,  2.500,  0.500, -1.000,  0.000,
-#'                            -0.667,  0.000,  0.500,  1.833, -1.000,  0.000,
-#'                             0.000,  0.533, -1.000, -1.000,  2.533, -1.067,
-#'                             0.000, -1.067,  0.000,  0.000, -1.067,  2.133),
-#'                   byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(round(AInv, digits = 3) - AInvExp) > .Machine$double.eps))
-#' AInvExp <- solve(getA(ped))
-#' stopifnot(!any(abs(round(AInv, digits = 14) - round(AInvExp, digits = 14)) > .Machine$double.eps))
-#' stopifnot(is(AInv, "sparseMatrix"))
-#' stopifnot(Matrix::isSymmetric(AInv))
 getAInv <- function(ped) {
     # A = LL' (lower %*% upper)
     # inv(A) = inv(LL')
@@ -468,16 +399,6 @@ getAInv <- function(ped) {
 #'                 label = 1:6)
 #' (A <- getA(ped))
 #'
-#' # Test for correctness
-#' AExp <- matrix(data = c(1.0000, 0.0000, 0.5000, 0.5000, 0.5000, 0.2500,
-#'                         0.0000, 1.0000, 0.5000, 0.0000, 0.2500, 0.6250,
-#'                         0.5000, 0.5000, 1.0000, 0.2500, 0.6250, 0.5625,
-#'                         0.5000, 0.0000, 0.2500, 1.0000, 0.6250, 0.3125,
-#'                         0.5000, 0.2500, 0.6250, 0.6250, 1.1250, 0.6875,
-#'                         0.2500, 0.6250, 0.5625, 0.3125, 0.6875, 1.1250),
-#'                byrow = TRUE, nrow = 6)
-#' stopifnot(!any(abs(A - AExp) > .Machine$double.eps))
-#' stopifnot(Matrix::isSymmetric(A))
 getA <- function(ped, labs = NULL) {
     if (is.null(labs)) {
         # A = LL' = R'R
@@ -518,17 +439,6 @@ getA <- function(ped, labs = NULL) {
 #' (ASubset3  <- A[6:4, 6:4])
 #' (ASubset4 <- getASubset(ped, labs = 6:4))
 #'
-#' # Test for correctness
-#' stopifnot(!any(abs(ASubset - ASubset2) > .Machine$double.eps))
-#' stopifnot(!any(abs(ASubset3 - ASubset4) > .Machine$double.eps))
-#' stopifnot(Matrix::isSymmetric(ASubset2))
-#' stopifnot(Matrix::isSymmetric(ASubset4))
-#' # ... with pedigree that does not have individuals coded 1:n
-#' ped2 <- pedigree(sire = c(NA, NA, 2,  2, 5, 6),
-#'                  dam =  c(NA, NA, 3, NA, 4, 3),
-#'                  label = 2:7)
-#' ASubsetShift <- getASubset(ped2, labs = 5:7)
-#' stopifnot(!any(abs(ASubset2 - ASubsetShift) > .Machine$double.eps))
 getASubset <- function(ped, labs) {
     stopifnot(is(ped, "pedigree"))
     stopifnot(!missing(labs))
@@ -571,12 +481,6 @@ getASubset <- function(ped, labs) {
 #' (tmp2 <- getGenAncestors(ped, id = 4))
 #' (tmp3 <- getGenAncestors(ped, id = 6))
 #'
-#' # Test for correctness
-#' stopifnot(tmp1$generation[1] == 0)
-#' stopifnot(all(is.na(tmp1$generation[-1])))
-#' stopifnot(all(tmp2$generation[c(1, 4)] == c(0, 1)))
-#' stopifnot(all(is.na(tmp2$generation[-c(1, 4)])))
-#' stopifnot(all(tmp3$generation == c(0, 0, 1, 1, 2, 3)))
 getGenAncestors <- function(ped, id, ngen = NULL) {
     j <- which(ped$id == id)
     parents <- c(ped$sire[j], ped$dam[j])

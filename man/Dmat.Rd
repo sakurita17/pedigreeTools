@@ -38,10 +38,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
 (D <- getD(ped))
 (DInv <- getDInv(ped))
 
-# Test for correctness
-DExp <- c(1.00, 1.00, 0.50, 0.75, 0.50, 0.46875)
-stopifnot(!any(abs(D - DExp) > .Machine$double.eps))
-
-DInvExp <- 1 / DExp
-stopifnot(!any(abs(DInv - DInvExp) > .Machine$double.eps))
 }

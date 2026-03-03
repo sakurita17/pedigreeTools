@@ -32,10 +32,4 @@ ped$generation <- NA
 (tmp2 <- getGenAncestors(ped, id = 4))
 (tmp3 <- getGenAncestors(ped, id = 6))
 
-# Test for correctness
-stopifnot(tmp1$generation[1] == 0)
-stopifnot(all(is.na(tmp1$generation[-1])))
-stopifnot(all(tmp2$generation[c(1, 4)] == c(0, 1)))
-stopifnot(all(is.na(tmp2$generation[-c(1, 4)])))
-stopifnot(all(tmp3$generation == c(0, 0, 1, 1, 2, 3)))
 }

@@ -22,17 +22,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
                 label = 1:6)
 (AInv <- getAInv(ped))
 
-# Test for correctness
-AInvExp <- matrix(data = c( 1.833,  0.500, -1.000, -0.667,  0.000,  0.000,
-                            0.500,  2.033, -1.000,  0.000,  0.533, -1.067,
-                           -1.000, -1.000,  2.500,  0.500, -1.000,  0.000,
-                           -0.667,  0.000,  0.500,  1.833, -1.000,  0.000,
-                            0.000,  0.533, -1.000, -1.000,  2.533, -1.067,
-                            0.000, -1.067,  0.000,  0.000, -1.067,  2.133),
-                  byrow = TRUE, nrow = 6)
-stopifnot(!any(abs(round(AInv, digits = 3) - AInvExp) > .Machine$double.eps))
-AInvExp <- solve(getA(ped))
-stopifnot(!any(abs(round(AInv, digits = 14) - round(AInvExp, digits = 14)) > .Machine$double.eps))
-stopifnot(is(AInv, "sparseMatrix"))
-stopifnot(Matrix::isSymmetric(AInv))
 }

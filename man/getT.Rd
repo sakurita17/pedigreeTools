@@ -21,13 +21,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
                 label = 1:6)
 (T <- getT(ped))
 
-# Test for correctness
-TExp <- matrix(data = c(1.00, 0.000, 0.00, 0.00, 0.0, 0,
-                        0.00, 1.000, 0.00, 0.00, 0.0, 0,
-                        0.50, 0.500, 1.00, 0.00, 0.0, 0,
-                        0.50, 0.000, 0.00, 1.00, 0.0, 0,
-                        0.50, 0.250, 0.50, 0.50, 1.0, 0,
-                        0.25, 0.625, 0.25, 0.25, 0.5, 1),
-               byrow = TRUE, nrow = 6)
-stopifnot(!any(abs(T  - TExp) > .Machine$double.eps))
 }

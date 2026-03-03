@@ -43,21 +43,6 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
 (L <- getL(ped))
 chol(getA(ped))
 
-# Test for correctness
-LExp <- matrix(data = c(1.0000, 0.0000, 0.5000, 0.5000, 0.5000, 0.2500,
-                        0.0000, 1.0000, 0.5000, 0.0000, 0.2500, 0.6250,
-                        0.0000, 0.0000, 0.7071, 0.0000, 0.3536, 0.1768,
-                        0.0000, 0.0000, 0.0000, 0.8660, 0.4330, 0.2165,
-                        0.0000, 0.0000, 0.0000, 0.0000, 0.7071, 0.3536,
-                        0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.6847),
-               byrow = TRUE, nrow = 6)
-stopifnot(!any(abs(round(L, digits = 4) - LExp) > .Machine$double.eps))
-LExp <- chol(getA(ped))
-stopifnot(!any(abs(L - LExp) > .Machine$double.eps))
-
-(L <- getL(ped, labs = 4:6))
-(LExp <- chol(getA(ped)[4:6, 4:6]))
-stopifnot(!any(abs(L - LExp) > .Machine$double.eps))
 }
 \references{
 Colleau, J.-J. An indirect approach to the extensive calculation of

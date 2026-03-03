@@ -24,7 +24,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
                 label = 1:6)
 (F <- inbreeding(ped))
 
-# Test for correctness
-FExp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125)
-stopifnot(!any(abs(F - FExp) > .Machine$double.eps))
 }

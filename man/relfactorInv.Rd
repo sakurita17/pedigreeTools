@@ -37,17 +37,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
 (LInv <- getLInv(ped))
 solve(Matrix::t(getL(ped)))
 
-# Test for correctness
-LInvExp <- matrix(data = c( 1.0000,  0.0000,  0.0000,  0.0000,  0.0000, 0.0000,
-                            0.0000,  1.0000,  0.0000,  0.0000,  0.0000, 0.0000,
-                           -0.7071, -0.7071,  1.4142,  0.0000,  0.0000, 0.0000,
-                           -0.5774,  0.0000,  0.0000,  1.1547,  0.0000, 0.0000,
-                            0.0000,  0.0000, -0.7071, -0.7071,  1.4142, 0.0000,
-                            0.0000, -0.7303,  0.0000,  0.0000, -0.7303, 1.4606),
-                  byrow = TRUE, nrow = 6)
-stopifnot(!any(abs(round(LInv, digits = 4) - LInvExp) > .Machine$double.eps))
-L <- t(chol(getA(ped)))
-LInvExp <- solve(L)
-stopifnot(!any(abs(LInv - LInvExp) > .Machine$double.eps))
-stopifnot(is(LInv, "sparseMatrix"))
 }

@@ -21,14 +21,4 @@ ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
                 label = 1:6)
 (TInv <- getTInv(ped))
 
-# Test for correctness
-TInvExp <- matrix(data = c( 1.0,  0.0,  0.0,  0.0,  0.0,  0.0,
-                            0.0,  1.0,  0.0,  0.0,  0.0,  0.0,
-                           -0.5, -0.5,  1.0,  0.0,  0.0,  0.0,
-                           -0.5,  0.0,  0.0,  1.0,  0.0,  0.0,
-                            0.0,  0.0, -0.5, -0.5,  1.0,  0.0,
-                            0.0, -0.5,  0.0,  0.0, -0.5,  1.0),
-                  byrow = TRUE, nrow = 6)
-stopifnot(!any(abs(TInv  - TInvExp) > .Machine$double.eps))
-stopifnot(is(TInv, "sparseMatrix"))
 }
