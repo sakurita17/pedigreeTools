@@ -1,0 +1,181 @@
+        -:    0:Source:/Users/s2745345/Library/R/arm64/4.4/library/Rcpp/include/Rcpp/vector/MatrixColumn.h
+        -:    0:Graph:./rcpp_functions.gcno
+        -:    0:Data:./rcpp_functions.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
+        -:    2://
+        -:    3:// MatrixColumn.h: Rcpp R/C++ interface class library -- matrices column
+        -:    4://
+        -:    5:// Copyright (C) 2010 - 2013 Dirk Eddelbuettel and Romain Francois
+        -:    6://
+        -:    7:// This file is part of Rcpp.
+        -:    8://
+        -:    9:// Rcpp is free software: you can redistribute it and/or modify it
+        -:   10:// under the terms of the GNU General Public License as published by
+        -:   11:// the Free Software Foundation, either version 2 of the License, or
+        -:   12:// (at your option) any later version.
+        -:   13://
+        -:   14:// Rcpp is distributed in the hope that it will be useful, but
+        -:   15:// WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   16:// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   17:// GNU General Public License for more details.
+        -:   18://
+        -:   19:// You should have received a copy of the GNU General Public License
+        -:   20:// along with Rcpp.  If not, see <http://www.gnu.org/licenses/>.
+        -:   21:
+        -:   22:#ifndef Rcpp__vector__MatrixColumn_h
+        -:   23:#define Rcpp__vector__MatrixColumn_h
+        -:   24:
+        -:   25:namespace Rcpp{
+        -:   26:
+        -:   27:template <int RTYPE>
+        -:   28:class MatrixColumn : public VectorBase<RTYPE,true,MatrixColumn<RTYPE> > {
+        -:   29:public:
+        -:   30:    typedef Matrix<RTYPE> MATRIX ;
+        -:   31:    typedef typename MATRIX::Proxy Proxy ;
+        -:   32:    typedef typename MATRIX::const_Proxy const_Proxy ;
+        -:   33:    typedef typename MATRIX::value_type value_type ;
+        -:   34:    typedef typename MATRIX::iterator iterator ;
+        -:   35:    typedef typename MATRIX::const_iterator const_iterator ;
+        -:   36:
+       72:   37:    MatrixColumn( MATRIX& parent, int i ) :
+       36:   38:        n(parent.nrow()),
+       36:   39:        start(parent.begin() + static_cast<R_xlen_t>(i) * n ),
+       36:   40:        const_start(const_cast<const MATRIX&>(parent).begin() + static_cast<R_xlen_t>(i) * n)
+       36:   41:    {
+       36:   42:        if( i < 0 || i >= parent.ncol() ) {
+    #####:   43:            const char* fmt = "Column index is out of bounds: "
+        -:   44:                              "[index=%i; column extent=%i].";
+    #####:   45:            throw index_out_of_bounds(fmt, i, parent.ncol()) ;
+        -:   46:        }
+       72:   47:    }
+        -:   48:
+        -:   49:    MatrixColumn( const MATRIX& parent, int i ) :
+        -:   50:        n(parent.nrow()),
+        -:   51:        start( const_cast<MATRIX&>(parent).begin() + static_cast<R_xlen_t>(i) * n ),
+        -:   52:        const_start(parent.begin() + static_cast<R_xlen_t>(i) * n)
+        -:   53:    {
+        -:   54:        if( i < 0 || i >= parent.ncol() ) {
+        -:   55:            const char* fmt = "Column index is out of bounds: "
+        -:   56:                              "[index=%i; column extent=%i].";
+        -:   57:            throw index_out_of_bounds(fmt, i, parent.ncol()) ;
+        -:   58:        }
+        -:   59:    }
+        -:   60:
+        -:   61:    MatrixColumn( const MatrixColumn& other ) :
+        -:   62:        n(other.n),
+        -:   63:        start(other.start),
+        -:   64:        const_start(other.const_start) {}
+        -:   65:
+        -:   66:    template <int RT, bool NA, typename T>
+        -:   67:    MatrixColumn& operator=( const Rcpp::VectorBase<RT,NA,T>& rhs ){
+        -:   68:        const T& ref = rhs.get_ref() ;
+        -:   69:        RCPP_LOOP_UNROLL(start,ref)
+        -:   70:        return *this ;
+        -:   71:    }
+        -:   72:
+        -:   73:    MatrixColumn& operator=( const MatrixColumn& rhs ){
+        -:   74:        iterator rhs_start = rhs.start ;
+        -:   75:        RCPP_LOOP_UNROLL(start,rhs_start)
+        -:   76:        return *this ;
+        -:   77:    }
+        -:   78:
+      612:   79:    inline Proxy operator[]( int i ){
+      612:   80:        return start[i] ;
+        -:   81:    }
+        -:   82:
+        -:   83:    inline const_Proxy operator[]( int i ) const {
+        -:   84:        return const_start[i] ;
+        -:   85:    }
+        -:   86:
+        -:   87:    inline const_iterator begin() const {
+        -:   88:        return const_start ;
+        -:   89:    }
+        -:   90:
+        -:   91:    inline const_iterator end() const {
+        -:   92:        return const_start + n ;
+        -:   93:    }
+        -:   94:    
+        -:   95:    inline const_iterator cbegin() const {
+        -:   96:        return const_start ;
+        -:   97:    }
+        -:   98:
+        -:   99:    inline const_iterator cend() const {
+        -:  100:        return const_start + n ;
+        -:  101:    }
+        -:  102:
+        -:  103:    inline iterator begin(){
+        -:  104:        return start ;
+        -:  105:    }
+        -:  106:
+        -:  107:    inline iterator end(){
+        -:  108:        return start + n ;
+        -:  109:    }
+        -:  110:
+        -:  111:    inline int size() const {
+        -:  112:        return n ;
+        -:  113:    }
+        -:  114:
+        -:  115:private:
+        -:  116:    const int n ;
+        -:  117:    iterator start ;
+        -:  118:    const_iterator const_start ;
+        -:  119:
+        -:  120:} ;
+        -:  121:
+        -:  122:template <int RTYPE>
+        -:  123:class ConstMatrixColumn : public VectorBase<RTYPE,true,ConstMatrixColumn<RTYPE> > {
+        -:  124:public:
+        -:  125:    typedef Matrix<RTYPE> MATRIX ;
+        -:  126:    typedef typename MATRIX::const_Proxy const_Proxy ;
+        -:  127:    typedef typename MATRIX::value_type value_type ;
+        -:  128:    typedef typename MATRIX::const_iterator const_iterator ;
+        -:  129:
+        -:  130:    ConstMatrixColumn( const MATRIX& parent, int i ) :
+        -:  131:        n(parent.nrow()),
+        -:  132:        const_start(parent.begin() + static_cast<R_xlen_t>(i) * n)
+        -:  133:    {
+        -:  134:        if( i < 0 || i >= parent.ncol() ) {
+        -:  135:            const char* fmt = "Column index is out of bounds: "
+        -:  136:                              "[index=%i; column extent=%i].";
+        -:  137:            throw index_out_of_bounds(fmt, i, parent.ncol()) ;
+        -:  138:        }
+        -:  139:    }
+        -:  140:
+        -:  141:    ConstMatrixColumn( const ConstMatrixColumn& other ) :
+        -:  142:        n(other.n),
+        -:  143:        const_start(other.const_start) {}
+        -:  144:
+        -:  145:    inline const_Proxy operator[]( int i ) const {
+        -:  146:        return const_start[i] ;
+        -:  147:    }
+        -:  148:
+        -:  149:    inline const_iterator begin() const {
+        -:  150:        return const_start ;
+        -:  151:    }
+        -:  152:
+        -:  153:    inline const_iterator end() const {
+        -:  154:        return const_start + n ;
+        -:  155:    }
+        -:  156:    
+        -:  157:    inline const_iterator cbegin() const {
+        -:  158:        return const_start ;
+        -:  159:    }
+        -:  160:
+        -:  161:    inline const_iterator cend() const {
+        -:  162:        return const_start + n ;
+        -:  163:    }
+        -:  164:
+        -:  165:    inline int size() const {
+        -:  166:        return n ;
+        -:  167:    }
+        -:  168:
+        -:  169:private:
+        -:  170:    const int n ;
+        -:  171:    const_iterator const_start ;
+        -:  172:
+        -:  173:} ;
+        -:  174:
+        -:  175:}
+        -:  176:#endif

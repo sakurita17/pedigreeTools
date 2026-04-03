@@ -1,0 +1,109 @@
+        -:    0:Source:rcpp_functions.cpp
+        -:    0:Graph:./rcpp_functions.gcno
+        -:    0:Data:./rcpp_functions.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <Rcpp.h>
+        -:    2:#include <set>
+        -:    3:#include <cmath>
+        -:    4:
+        -:    5:using namespace Rcpp;
+        -:    6:
+        -:    7:// [[Rcpp::export]]
+       18:    8:NumericVector inbreeding_meta(NumericMatrix ped, NumericMatrix gamma) {
+        -:    9:
+       18:   10:    const int n = ped.nrow();
+       18:   11:    const int nmf = gamma.nrow();
+        -:   12:
+        -:   13:    // Extracting parents
+       18:   14:    NumericMatrix::Column sire = ped(_, 1);
+       18:   15:    NumericMatrix::Column dam  = ped(_, 2);
+        -:   16:
+        -:   17:    //-------------------------
+        -:   18:    // Output vector of inbreeding F[i] = Aii - 1
+        -:   19:    //-------------------------
+       18:   20:    NumericVector F(n, NA_REAL);
+        -:   21:
+        -:   22:    //--------------------------
+        -:   23:    // Initialize metafounders
+        -:   24:    // For metafounder k:
+        -:   25:    // A_kk = gamma_kk => F_k = gamma_kk - 1
+        -:   26:    //-------------------------
+       45:   27:    for (int k = 0; k < nmf; ++k) {
+       27:   28:        F[k] = gamma(k, k) - 1.0;
+       27:   29:    }
+        -:   30:
+        -:   31:    //---------------------------
+        -:   32:    // Processing non-metafounders
+        -:   33:    //---------------------------
+      126:   34:    for (int i = nmf; i < n; ++i) {
+        -:   35:
+        -:   36:        // Lrow stores the recursive contributions from i to its ancestors
+      108:   37:        NumericVector Lrow(n, 0.0);
+      108:   38:        std::set<int> active;
+        -:   39:
+        -:   40:        // Lmf stores the total contributions that reach each metafounder
+      108:   41:        NumericVector Lmf(nmf, 0.0);
+        -:   42:
+        -:   43:        // Start from individual i itself
+      108:   44:        Lrow[i] = 1.0;
+      108:   45:        active.insert(i);
+        -:   46:
+      108:   47:        double Aii = 0.0;
+        -:   48:
+      558:   49:        while (!active.empty()) {
+        -:   50:
+      450:   51:            int j = *active.rbegin();
+      450:   52:            active.erase(j);
+        -:   53:
+      450:   54:            double Lj = Lrow[j];
+      450:   55:            if (Lj == 0.0) continue;
+      450:   56:            Lrow[j] = 0.0;
+        -:   57:
+        -:   58:            // Case 1: j is a metafounder
+      450:   59:            if (j < nmf) {
+      144:   60:                Lmf[j] += Lj;
+      144:   61:                continue;
+        -:   62:            }
+        -:   63:
+        -:   64:            // Case 2: j is a regular individual
+      306:   65:            int sj = static_cast<int>(sire[j]);
+      306:   66:            int dj = static_cast<int>(dam[j]);
+        -:   67:
+        -:   68:            // If parent = 0, use F = -1 so that unknown unrelated parents
+      306:   69:            double F_s = (sj == 0) ? -1.0 : F[sj - 1];
+      306:   70:            double F_d = (dj == 0) ? -1.0 : F[dj - 1];
+        -:   71:
+      306:   72:            double Dj = 0.5 - 0.25 * (F_s + F_d);
+        -:   73:
+        -:   74:            // Add contributions from individual j
+      306:   75:            Aii += Lj * Lj * Dj;
+        -:   76:
+        -:   77:            // Propagate to parents
+      306:   78:            if (sj != 0) {
+      306:   79:                Lrow[sj - 1] += 0.5 * Lj;
+      306:   80:                active.insert(sj - 1);
+      306:   81:            }
+      306:   82:            if (dj != 0) {
+      306:   83:                Lrow[dj - 1] += 0.5 * Lj;
+      306:   84:                active.insert(dj - 1);
+      306:   85:            }
+        -:   86:        }
+        -:   87:
+        -:   88:        //------------------------
+        -:   89:        // Legarra correction for MF block
+        -:   90:        // contribution = Lmf' * gamma * Lmf
+        -:   91:        //------------------------
+      108:   92:        double quad_form = 0.0;
+      270:   93:        for (int r = 0; r < nmf; ++r) {
+      432:   94:            for (int c = 0; c < nmf; ++c) {
+      270:   95:                quad_form += Lmf[r] * gamma(r, c) * Lmf[c];
+      270:   96:            }
+      162:   97:        }
+        -:   98:
+      108:   99:        Aii += quad_form;
+      108:  100:        F[i] = Aii - 1.0;
+      108:  101:    }
+        -:  102:
+       18:  103:    return F;
+       18:  104:}

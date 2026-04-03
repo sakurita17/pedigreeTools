@@ -1,0 +1,401 @@
+        -:    0:Source:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/typeinfo
+        -:    0:Graph:./RcppExports.gcno
+        -:    0:Data:./RcppExports.gcda
+        -:    0:Runs:8
+        -:    0:Programs:1
+        -:    1:// -*- C++ -*-
+        -:    2://===----------------------------------------------------------------------===//
+        -:    3://
+        -:    4:// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+        -:    5:// See https://llvm.org/LICENSE.txt for license information.
+        -:    6:// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+        -:    7://
+        -:    8://===----------------------------------------------------------------------===//
+        -:    9:
+        -:   10:#ifndef _LIBCPP_TYPEINFO
+        -:   11:#define _LIBCPP_TYPEINFO
+        -:   12:
+        -:   13:/*
+        -:   14:
+        -:   15:    typeinfo synopsis
+        -:   16:
+        -:   17:namespace std {
+        -:   18:
+        -:   19:class type_info
+        -:   20:{
+        -:   21:public:
+        -:   22:    virtual ~type_info();
+        -:   23:
+        -:   24:    bool operator==(const type_info& rhs) const noexcept; // constexpr since C++23
+        -:   25:    bool operator!=(const type_info& rhs) const noexcept; // removed in C++20
+        -:   26:
+        -:   27:    bool before(const type_info& rhs) const noexcept;
+        -:   28:    size_t hash_code() const noexcept;
+        -:   29:    const char* name() const noexcept;
+        -:   30:
+        -:   31:    type_info(const type_info& rhs) = delete;
+        -:   32:    type_info& operator=(const type_info& rhs) = delete;
+        -:   33:};
+        -:   34:
+        -:   35:class bad_cast
+        -:   36:    : public exception
+        -:   37:{
+        -:   38:public:
+        -:   39:    bad_cast() noexcept;
+        -:   40:    bad_cast(const bad_cast&) noexcept;
+        -:   41:    bad_cast& operator=(const bad_cast&) noexcept;
+        -:   42:    virtual const char* what() const noexcept;
+        -:   43:};
+        -:   44:
+        -:   45:class bad_typeid
+        -:   46:    : public exception
+        -:   47:{
+        -:   48:public:
+        -:   49:    bad_typeid() noexcept;
+        -:   50:    bad_typeid(const bad_typeid&) noexcept;
+        -:   51:    bad_typeid& operator=(const bad_typeid&) noexcept;
+        -:   52:    virtual const char* what() const noexcept;
+        -:   53:};
+        -:   54:
+        -:   55:}  // std
+        -:   56:
+        -:   57:*/
+        -:   58:
+        -:   59:#if __cplusplus < 201103L && defined(_LIBCPP_USE_FROZEN_CXX03_HEADERS)
+        -:   60:#  include <__cxx03/typeinfo>
+        -:   61:#else
+        -:   62:#  include <__config>
+        -:   63:#  include <__cstddef/size_t.h>
+        -:   64:#  include <__exception/exception.h>
+        -:   65:#  include <__type_traits/integral_constant.h>
+        -:   66:#  include <__type_traits/is_constant_evaluated.h>
+        -:   67:#  include <__verbose_abort>
+        -:   68:#  include <cstdint>
+        -:   69:#  include <version>
+        -:   70:
+        -:   71:#  if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+        -:   72:#    pragma GCC system_header
+        -:   73:#  endif
+        -:   74:
+        -:   75:#  if defined(_LIBCPP_ABI_VCRUNTIME)
+        -:   76:#    include <vcruntime_typeinfo.h>
+        -:   77:#  else
+        -:   78:
+        -:   79:namespace std // purposefully not using versioning namespace
+        -:   80:{
+        -:   81:
+        -:   82:#    if defined(_LIBCPP_ABI_MICROSOFT)
+        -:   83:
+        -:   84:class _LIBCPP_EXPORTED_FROM_ABI type_info {
+        -:   85:  type_info& operator=(const type_info&);
+        -:   86:  type_info(const type_info&);
+        -:   87:
+        -:   88:  mutable struct {
+        -:   89:    const char* __undecorated_name;
+        -:   90:    const char __decorated_name[1];
+        -:   91:  } __data;
+        -:   92:
+        -:   93:  int __compare(const type_info& __rhs) const _NOEXCEPT;
+        -:   94:
+        -:   95:public:
+        -:   96:  virtual ~type_info();
+        -:   97:
+        -:   98:  const char* name() const _NOEXCEPT;
+        -:   99:
+        -:  100:  _LIBCPP_HIDE_FROM_ABI bool before(const type_info& __arg) const _NOEXCEPT { return __compare(__arg) < 0; }
+        -:  101:
+        -:  102:  size_t hash_code() const _NOEXCEPT;
+        -:  103:
+        -:  104:  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 bool operator==(const type_info& __arg) const _NOEXCEPT {
+        -:  105:    // When evaluated in a constant expression, both type infos simply can't come
+        -:  106:    // from different translation units, so it is sufficient to compare their addresses.
+        -:  107:    if (__libcpp_is_constant_evaluated()) {
+        -:  108:      return this == &__arg;
+        -:  109:    }
+        -:  110:    return __compare(__arg) == 0;
+        -:  111:  }
+        -:  112:
+        -:  113:#      if _LIBCPP_STD_VER <= 17
+        -:  114:  _LIBCPP_HIDE_FROM_ABI bool operator!=(const type_info& __arg) const _NOEXCEPT { return !operator==(__arg); }
+        -:  115:#      endif
+        -:  116:};
+        -:  117:
+        -:  118:#    else // !defined(_LIBCPP_ABI_MICROSOFT)
+        -:  119:
+        -:  120:// ========================================================================== //
+        -:  121://                           Implementations
+        -:  122:// ========================================================================== //
+        -:  123:// ------------------------------------------------------------------------- //
+        -:  124://                               Unique
+        -:  125://               (_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION = 1)
+        -:  126:// ------------------------------------------------------------------------- //
+        -:  127:// This implementation of type_info assumes a unique copy of the RTTI for a
+        -:  128:// given type inside a program. This is a valid assumption when abiding to the
+        -:  129:// Itanium ABI (http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vtable-components).
+        -:  130:// Under this assumption, we can always compare the addresses of the type names
+        -:  131:// to implement equality-comparison of type_infos instead of having to perform
+        -:  132:// a deep string comparison.
+        -:  133:// -------------------------------------------------------------------------- //
+        -:  134://                             NonUnique
+        -:  135://               (_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION = 2)
+        -:  136:// -------------------------------------------------------------------------- //
+        -:  137:// This implementation of type_info does not assume there is always a unique
+        -:  138:// copy of the RTTI for a given type inside a program. For various reasons
+        -:  139:// the linker may have failed to merge every copy of a types RTTI
+        -:  140:// (For example: -Bsymbolic or llvm.org/PR37398). Under this assumption, two
+        -:  141:// type_infos are equal if their addresses are equal or if a deep string
+        -:  142:// comparison is equal.
+        -:  143:// -------------------------------------------------------------------------- //
+        -:  144://                          NonUniqueARMRTTIBit
+        -:  145://               (_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION = 3)
+        -:  146:// -------------------------------------------------------------------------- //
+        -:  147:// This implementation is specific to ARM64 on Apple platforms.
+        -:  148://
+        -:  149:// This implementation of type_info does not assume always a unique copy of
+        -:  150:// the RTTI for a given type inside a program. When constructing the type_info,
+        -:  151:// the compiler packs the pointer to the type name into a uintptr_t and reserves
+        -:  152:// the high bit of that pointer, which is assumed to be free for use under that
+        -:  153:// ABI. If that high bit is set, that specific copy of the RTTI can't be assumed
+        -:  154:// to be unique within the program. If the high bit is unset, then the RTTI can
+        -:  155:// be assumed to be unique within the program.
+        -:  156://
+        -:  157:// When comparing type_infos, if both RTTIs can be assumed to be unique, it
+        -:  158:// suffices to compare their addresses. If both the RTTIs can't be assumed to
+        -:  159:// be unique, we must perform a deep string comparison of the type names.
+        -:  160:// However, if one of the RTTIs is guaranteed unique and the other one isn't,
+        -:  161:// then both RTTIs are necessarily not to be considered equal.
+        -:  162://
+        -:  163:// The intent of this design is to remove the need for weak symbols. Specifically,
+        -:  164:// if a type would normally have a default-visibility RTTI emitted as a weak
+        -:  165:// symbol, it is given hidden visibility instead and the non-unique bit is set.
+        -:  166:// Otherwise, types declared with hidden visibility are always considered to have
+        -:  167:// a unique RTTI: the RTTI is emitted with linkonce_odr linkage and is assumed
+        -:  168:// to be deduplicated by the linker within the linked image. Across linked image
+        -:  169:// boundaries, such types are thus considered different types.
+        -:  170:
+        -:  171:// This value can be overriden in the __config_site. When it's not overriden,
+        -:  172:// we pick a default implementation based on the platform here.
+        -:  173:#      ifndef _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION
+        -:  174:
+        -:  175:// Windows and AIX binaries can't merge typeinfos, so use the NonUnique implementation.
+        -:  176:#        if defined(_LIBCPP_OBJECT_FORMAT_COFF) || defined(_LIBCPP_OBJECT_FORMAT_XCOFF)
+        -:  177:#          define _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION 2
+        -:  178:
+        -:  179:// On arm64 on Apple platforms, use the special NonUniqueARMRTTIBit implementation.
+        -:  180:#        elif defined(__APPLE__) && defined(__LP64__) && !defined(__x86_64__)
+        -:  181:#          define _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION 3
+        -:  182:
+        -:  183:// On all other platforms, assume the Itanium C++ ABI and use the Unique implementation.
+        -:  184:#        else
+        -:  185:#          define _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION 1
+        -:  186:#        endif
+        -:  187:#      endif
+        -:  188:
+        -:  189:struct __type_info_implementations {
+        -:  190:  struct __string_impl_base {
+        -:  191:    typedef const char* __type_name_t;
+        -:  192:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR static const char*
+        -:  193:    __type_name_to_string(__type_name_t __v) _NOEXCEPT {
+        -:  194:      return __v;
+        -:  195:    }
+        -:  196:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR static __type_name_t
+        -:  197:    __string_to_type_name(const char* __v) _NOEXCEPT {
+        -:  198:      return __v;
+        -:  199:    }
+        -:  200:  };
+        -:  201:
+        -:  202:  struct __unique_impl : __string_impl_base {
+        -:  203:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static size_t __hash(__type_name_t __v) _NOEXCEPT {
+        -:  204:      return reinterpret_cast<size_t>(__v);
+        -:  205:    }
+        -:  206:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __eq(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  207:      return __lhs == __rhs;
+        -:  208:    }
+        -:  209:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __lt(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  210:      return __lhs < __rhs;
+        -:  211:    }
+        -:  212:  };
+        -:  213:
+        -:  214:  struct __non_unique_impl : __string_impl_base {
+        -:  215:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static size_t __hash(__type_name_t __ptr) _NOEXCEPT {
+        -:  216:      size_t __hash = 5381;
+        -:  217:      while (unsigned char __c = static_cast<unsigned char>(*__ptr++))
+        -:  218:        __hash = (__hash * 33) ^ __c;
+        -:  219:      return __hash;
+        -:  220:    }
+        -:  221:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __eq(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  222:      return __lhs == __rhs || __builtin_strcmp(__lhs, __rhs) == 0;
+        -:  223:    }
+        -:  224:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __lt(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  225:      return __builtin_strcmp(__lhs, __rhs) < 0;
+        -:  226:    }
+        -:  227:  };
+        -:  228:
+        -:  229:  struct __non_unique_arm_rtti_bit_impl {
+        -:  230:    typedef uintptr_t __type_name_t;
+        -:  231:
+    #####:  232:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static const char* __type_name_to_string(__type_name_t __v) _NOEXCEPT {
+    #####:  233:      return reinterpret_cast<const char*>(__v & ~__non_unique_rtti_bit::value);
+        -:  234:    }
+        -:  235:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static __type_name_t __string_to_type_name(const char* __v) _NOEXCEPT {
+        -:  236:      return reinterpret_cast<__type_name_t>(__v);
+        -:  237:    }
+        -:  238:
+        -:  239:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static size_t __hash(__type_name_t __v) _NOEXCEPT {
+        -:  240:      if (__is_type_name_unique(__v))
+        -:  241:        return __v;
+        -:  242:      return __non_unique_impl::__hash(__type_name_to_string(__v));
+        -:  243:    }
+        -:  244:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __eq(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  245:      if (__lhs == __rhs)
+        -:  246:        return true;
+        -:  247:      if (__is_type_name_unique(__lhs) || __is_type_name_unique(__rhs))
+        -:  248:        // Either both are unique and have a different address, or one of them
+        -:  249:        // is unique and the other one isn't. In both cases they are unequal.
+        -:  250:        return false;
+        -:  251:      return __builtin_strcmp(__type_name_to_string(__lhs), __type_name_to_string(__rhs)) == 0;
+        -:  252:    }
+        -:  253:    _LIBCPP_HIDE_FROM_ABI _LIBCPP_ALWAYS_INLINE static bool __lt(__type_name_t __lhs, __type_name_t __rhs) _NOEXCEPT {
+        -:  254:      if (__is_type_name_unique(__lhs) || __is_type_name_unique(__rhs))
+        -:  255:        return __lhs < __rhs;
+        -:  256:      return __builtin_strcmp(__type_name_to_string(__lhs), __type_name_to_string(__rhs)) < 0;
+        -:  257:    }
+        -:  258:
+        -:  259:  private:
+        -:  260:    // The unique bit is the top bit. It is expected that __type_name_t is 64 bits when
+        -:  261:    // this implementation is actually used.
+        -:  262:    typedef integral_constant<__type_name_t, (1ULL << ((__CHAR_BIT__ * sizeof(__type_name_t)) - 1))>
+        -:  263:        __non_unique_rtti_bit;
+        -:  264:
+        -:  265:    _LIBCPP_HIDE_FROM_ABI static bool __is_type_name_unique(__type_name_t __lhs) _NOEXCEPT {
+        -:  266:      return !(__lhs & __non_unique_rtti_bit::value);
+        -:  267:    }
+        -:  268:  };
+        -:  269:
+        -:  270:  typedef
+        -:  271:#      if _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION == 1
+        -:  272:      __unique_impl
+        -:  273:#      elif _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION == 2
+        -:  274:      __non_unique_impl
+        -:  275:#      elif _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION == 3
+        -:  276:      __non_unique_arm_rtti_bit_impl
+        -:  277:#      else
+        -:  278:#        error invalid configuration for _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION
+        -:  279:#      endif
+        -:  280:          __impl;
+        -:  281:};
+        -:  282:
+        -:  283:#      if __has_cpp_attribute(_Clang::__ptrauth_vtable_pointer__)
+        -:  284:#        if __has_feature(ptrauth_type_info_vtable_pointer_discrimination)
+        -:  285:#          define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH                                                                \
+        -:  286:            [[_Clang::__ptrauth_vtable_pointer__(process_independent, address_discrimination, type_discrimination)]]
+        -:  287:#        else
+        -:  288:#          define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH                                                                \
+        -:  289:            [[_Clang::__ptrauth_vtable_pointer__(                                                                      \
+        -:  290:                process_independent, no_address_discrimination, no_extra_discrimination)]]
+        -:  291:#        endif
+        -:  292:#      else
+        -:  293:#        define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH
+        -:  294:#      endif
+        -:  295:
+        -:  296:class _LIBCPP_EXPORTED_FROM_ABI _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH type_info {
+        -:  297:  type_info& operator=(const type_info&);
+        -:  298:  type_info(const type_info&);
+        -:  299:
+        -:  300:protected:
+        -:  301:  typedef __type_info_implementations::__impl __impl;
+        -:  302:
+        -:  303:  __impl::__type_name_t __type_name;
+        -:  304:
+        -:  305:  _LIBCPP_HIDE_FROM_ABI explicit type_info(const char* __n) : __type_name(__impl::__string_to_type_name(__n)) {}
+        -:  306:
+        -:  307:public:
+        -:  308:  virtual ~type_info();
+        -:  309:
+    #####:  310:  _LIBCPP_HIDE_FROM_ABI const char* name() const _NOEXCEPT { return __impl::__type_name_to_string(__type_name); }
+        -:  311:
+        -:  312:  _LIBCPP_HIDE_FROM_ABI bool before(const type_info& __arg) const _NOEXCEPT {
+        -:  313:    return __impl::__lt(__type_name, __arg.__type_name);
+        -:  314:  }
+        -:  315:
+        -:  316:  _LIBCPP_HIDE_FROM_ABI size_t hash_code() const _NOEXCEPT { return __impl::__hash(__type_name); }
+        -:  317:
+        -:  318:  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 bool operator==(const type_info& __arg) const _NOEXCEPT {
+        -:  319:    // When evaluated in a constant expression, both type infos simply can't come
+        -:  320:    // from different translation units, so it is sufficient to compare their addresses.
+        -:  321:    if (__libcpp_is_constant_evaluated()) {
+        -:  322:      return this == &__arg;
+        -:  323:    }
+        -:  324:    return __impl::__eq(__type_name, __arg.__type_name);
+        -:  325:  }
+        -:  326:
+        -:  327:#      if _LIBCPP_STD_VER <= 17
+        -:  328:  _LIBCPP_HIDE_FROM_ABI bool operator!=(const type_info& __arg) const _NOEXCEPT { return !operator==(__arg); }
+        -:  329:#      endif
+        -:  330:};
+        -:  331:#    endif // defined(_LIBCPP_ABI_MICROSOFT)
+        -:  332:
+        -:  333:class _LIBCPP_EXPORTED_FROM_ABI bad_cast : public exception {
+        -:  334:public:
+        -:  335:  bad_cast() _NOEXCEPT;
+        -:  336:  _LIBCPP_HIDE_FROM_ABI bad_cast(const bad_cast&) _NOEXCEPT            = default;
+        -:  337:  _LIBCPP_HIDE_FROM_ABI bad_cast& operator=(const bad_cast&) _NOEXCEPT = default;
+        -:  338:  ~bad_cast() _NOEXCEPT override;
+        -:  339:  const char* what() const _NOEXCEPT override;
+        -:  340:};
+        -:  341:
+        -:  342:class _LIBCPP_EXPORTED_FROM_ABI bad_typeid : public exception {
+        -:  343:public:
+        -:  344:  bad_typeid() _NOEXCEPT;
+        -:  345:  _LIBCPP_HIDE_FROM_ABI bad_typeid(const bad_typeid&) _NOEXCEPT            = default;
+        -:  346:  _LIBCPP_HIDE_FROM_ABI bad_typeid& operator=(const bad_typeid&) _NOEXCEPT = default;
+        -:  347:  ~bad_typeid() _NOEXCEPT override;
+        -:  348:  const char* what() const _NOEXCEPT override;
+        -:  349:};
+        -:  350:
+        -:  351:} // namespace std
+        -:  352:
+        -:  353:#  endif // defined(_LIBCPP_ABI_VCRUNTIME)
+        -:  354:
+        -:  355:#  if defined(_LIBCPP_ABI_VCRUNTIME) && _HAS_EXCEPTIONS == 0
+        -:  356:
+        -:  357:namespace std {
+        -:  358:
+        -:  359:class bad_cast : public exception {
+        -:  360:public:
+        -:  361:  bad_cast() _NOEXCEPT : exception("bad cast") {}
+        -:  362:
+        -:  363:private:
+        -:  364:  bad_cast(const char* const __message) _NOEXCEPT : exception(__message) {}
+        -:  365:};
+        -:  366:
+        -:  367:class bad_typeid : public exception {
+        -:  368:public:
+        -:  369:  bad_typeid() _NOEXCEPT : exception("bad typeid") {}
+        -:  370:
+        -:  371:private:
+        -:  372:  bad_typeid(const char* const __message) _NOEXCEPT : exception(__message) {}
+        -:  373:};
+        -:  374:
+        -:  375:} // namespace std
+        -:  376:
+        -:  377:#  endif // defined(_LIBCPP_ABI_VCRUNTIME) && _HAS_EXCEPTIONS == 0
+        -:  378:
+        -:  379:_LIBCPP_BEGIN_NAMESPACE_STD
+        -:  380:[[__noreturn__]] inline _LIBCPP_HIDE_FROM_ABI void __throw_bad_cast() {
+        -:  381:#  if _LIBCPP_HAS_EXCEPTIONS
+        -:  382:  throw bad_cast();
+        -:  383:#  else
+        -:  384:  _LIBCPP_VERBOSE_ABORT("bad_cast was thrown in -fno-exceptions mode");
+        -:  385:#  endif
+        -:  386:}
+        -:  387:_LIBCPP_END_NAMESPACE_STD
+        -:  388:
+        -:  389:#  if !defined(_LIBCPP_REMOVE_TRANSITIVE_INCLUDES) && _LIBCPP_STD_VER <= 20
+        -:  390:#    include <cstddef>
+        -:  391:#    include <cstdlib>
+        -:  392:#    include <type_traits>
+        -:  393:#  endif
+        -:  394:#endif // __cplusplus < 201103L && defined(_LIBCPP_USE_FROZEN_CXX03_HEADERS)
+        -:  395:
+        -:  396:#endif // _LIBCPP_TYPEINFO

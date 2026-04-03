@@ -4,10 +4,12 @@
 \alias{inbreeding}
 \title{Inbreeding coefficients from a pedigree}
 \usage{
-inbreeding(ped)
+inbreeding(ped, gamma = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
+
+\item{gamma}{TODO}
 }
 \value{
 the inbreeding coefficients as a numeric vector
@@ -19,9 +21,28 @@ Create the inbreeding coefficients according to the algorithm
   Journal (2005) 76, 401--406.
 }
 \examples{
+
+Without metafounders
 ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
                 dam =  c(NA, NA, 2, NA, 3, 2),
                 label = 1:6)
+
+Test
 (F <- inbreeding(ped))
+(Fexp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125))
+
+#' With metafounders
+
+ped_met <- pedigree(
+    sire = ped_diff$sire,
+    ped_diff$dam,
+    ped_diff$label
+    )
+
+gamma <- matrix(c(0.1, 0.05, 0.05, 0.2), nrow = 2, byrow = TRUE)
+
+Test
+(F_met <- inbreeding(ped, gamma))
+(Fexp_met <- c(-0.90000, -0.80000, 0.02500, 0.00000, 0.01875, 0.03750))
 
 }

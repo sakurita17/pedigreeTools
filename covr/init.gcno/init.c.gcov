@@ -1,0 +1,22 @@
+        -:    0:Source:init.c
+        -:    0:Graph:./init.gcno
+        -:    0:Data:./init.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include "pedigree.h"
+        -:    2:#include <R_ext/Rdynload.h>
+        -:    3:
+        -:    4:extern SEXP _pedigreeTools_inbreeding_meta(SEXP, SEXP);
+        -:    5:
+        -:    6:static const R_CallMethodDef CallEntries[] = {
+        -:    7:    {"pedigree_chol", (DL_FUNC) &pedigree_chol, 2},
+        -:    8:    {"pedigree_inbreeding", (DL_FUNC) &pedigree_inbreeding, 1},
+        -:    9:    {"_pedigreeTools_inbreeding_meta", (DL_FUNC) &_pedigreeTools_inbreeding_meta, 2},
+        -:   10:    {NULL, NULL, 0}
+        -:   11:};
+        -:   12:
+        8:   13:void R_init_pedigreeTools(DllInfo *dll)
+        -:   14:{
+        8:   15:    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+        8:   16:    R_useDynamicSymbols(dll, FALSE);
+        8:   17:}

@@ -103,7 +103,7 @@ SEXP pedigree_inbreeding(SEXP x)
     int *Anc = R_Calloc(n + 1, int),	/* ancestor */
 	*LAP = R_Calloc(n + 1, int); 	/* longest ancestoral path */
     R_CheckStack();
-    
+
     for (i = 0; i < n; i++) {     /* Replace NA's by zeros */
 	if (sire[i] == NA_INTEGER) sire[i] = 0;
 	if (dam[i] == NA_INTEGER) dam[i] = 0;
@@ -119,27 +119,32 @@ SEXP pedigree_inbreeding(SEXP x)
     for(i = 0; i <= t ; ++i) SI[i] = MI[i] = 0; /* initialize start and minor */
     for(i = 1; i <= n; i++) { 	/* evaluate F */
 	S = sire[i-1]; D = dam[i-1]; /* parents of animal i */
-	B[i] = 0.5 - 0.25 * (F[S] + F[D]); 
+	B[i] = 0.5 - 0.25 * (F[S] + F[D]);
 				/* adjust start and minor */
-	for (j = 0; j < LAP[i]; j++) {++SI[j]; ++MI[j];} 
+	for (j = 0; j < LAP[i]; j++) {++SI[j]; ++MI[j];}
 	if (S == 0 || D == 0) { /* both parents unknown */
 	    F[i] = L[i] = 0; continue;
 	}
-	if(S == sire[i-2] && D == dam[i-2]) { /* full-sib with last animal */
-	    F[i] = F[i-1]; L[i] = L[i-1]; continue;
+	/*if(S == sire[i-2] && D == dam[i-2]) { full-sib with last animal
+	   F[i] = F[i-1]; L[i] = L[i-1]; continue;
+	}*/
+	if (i > 1 && S == sire[i-2] && D == dam[i-2]) {
+	    F[i] = F[i-1];
+	    L[i] = L[i-1];
+	    continue;
 	}
-    
-	F[i] = -1; L[i] = 1; 
+
+	F[i] = -1; L[i] = 1;
 	t = LAP[i]; /* largest lap group number in the animal's pedigree */
 	Anc[MI[t]++] = i; /* initialize Anc and increment MI[t] */
 	while(t > -1) { /* from the largest lap group to zero */
 	    j = Anc[--MI[t]]; /* next ancestor */
 	    S = sire[j-1]; D = dam[j-1]; /* parents of the ancestor */
 	    if (S) {
-		if (!L[S]) Anc[MI[LAP[S]]++] = S; 
+		if (!L[S]) Anc[MI[LAP[S]]++] = S;
 				/* add sire in its lap group in Anc
 				 * array if it is not added yet and
-				 * increment the minor index for the group */ 
+				 * increment the minor index for the group */
 		L[S] += 0.5 * L[j]; /* contribution to sire */
 	    }
 	    if (D) {
@@ -151,7 +156,7 @@ SEXP pedigree_inbreeding(SEXP x)
 	    if (MI[t] == SI[t]) --t; /* move to the next lap group when
 				      * all ancestors in group t have been
 				      * evaluated */
-	} 
+	}
     }
     ans = PROTECT(allocVector(REALSXP, n));
     Memcpy(REAL(ans), F + 1, n);

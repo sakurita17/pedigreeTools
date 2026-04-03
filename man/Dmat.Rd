@@ -3,17 +3,19 @@
 \name{Dmat}
 \alias{Dmat}
 \alias{getD}
-\alias{getDInv}
+\alias{DInvmat}
 \title{Mendelian sampling variance}
 \usage{
-Dmat(ped, vector = TRUE)
+Dmat(ped, gamma = NULL, vector = TRUE)
 
-getD(ped, vector = TRUE)
+getD(ped, gamma = NULL, vector = TRUE)
 
-getDInv(ped, vector = TRUE)
+DInvmat(ped, gamma = NULL, vector = TRUE)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
+
+\item{gamma}{TODO}
 
 \item{vector}{logical, return a vector or sparse matrix}
 }
@@ -28,7 +30,7 @@ Determine the diagonal factor in the decomposition of the
 \itemize{
 \item \code{getD()}: Mendelian sampling variance
 
-\item \code{getDInv()}: Mendelian sampling precision (= 1 / variance)
+\item \code{DInvmat()}: Mendelian sampling precision (= 1 / variance)
 
 }}
 \examples{

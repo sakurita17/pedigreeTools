@@ -5,9 +5,9 @@
 \alias{getL}
 \title{Relationship factor from a pedigree}
 \usage{
-relfactor(ped, labs = NULL)
+relfactor(ped, gamma = NULL, labs = NULL)
 
-getL(ped, labs = NULL)
+getL(ped, gamma = NULL, labs = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}

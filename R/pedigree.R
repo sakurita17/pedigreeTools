@@ -146,7 +146,7 @@ setMethod("head", "pedigree", function(x, ...)
 setMethod("tail", "pedigree", function(x, ...)
 	  do.call("tail", list(x = ped2DF(x), ...)))
 
-#' @useDynLib pedigreeTools pedigree_chol
+# @useDynLib pedigreeTools pedigree_chol
 setMethod("chol", "pedigree",
           function(x, pivot, LINPACK) {
               ttrans <- Matrix::solve(Matrix::t(as(x, "dtCMatrix")))
@@ -163,19 +163,57 @@ setMethod("chol", "pedigree",
 #'   Journal (2005) 76, 401--406.
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma TODO
 #' @return the inbreeding coefficients as a numeric vector
 #' @export
-#' @useDynLib pedigreeTools pedigree_inbreeding
+#  @useDynLib pedigreeTools pedigree_inbreeding
 #' @examples
+#'
+#' Without metafounders
 #' ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
 #'                 dam =  c(NA, NA, 2, NA, 3, 2),
 #'                 label = 1:6)
-#' (F <- inbreeding(ped))
 #'
-inbreeding <- function(ped) {
+#' Test
+#' (F <- inbreeding(ped))
+#' (Fexp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125))
+#'
+#'#' With metafounders
+#'
+#' ped_met <- pedigree(
+#'     sire = ped_diff$sire,
+#'     ped_diff$dam,
+#'     ped_diff$label
+#'     )
+#'
+#' gamma <- matrix(c(0.1, 0.05, 0.05, 0.2), nrow = 2, byrow = TRUE)
+#'
+#' Test
+#' (F_met <- inbreeding(ped, gamma))
+#' (Fexp_met <- c(-0.90000, -0.80000, 0.02500, 0.00000, 0.01875, 0.03750))
+#'
+
+
+inbreeding <- function(ped, gamma = NULL) {
+
     stopifnot(is(ped, "pedigree"))
-    .Call(pedigree_inbreeding, ped)
+
+    if (is.null(gamma)) {
+
+        return(.Call(pedigree_inbreeding, ped))
+
+    } else {
+
+        ped_mat <- cbind(
+            label = as.integer(ped@label),
+            sire  = as.integer(ifelse(is.na(ped@sire), 0, ped@sire)),
+            dam   = as.integer(ifelse(is.na(ped@dam), 0, ped@dam))
+        )
+
+        return(inbreeding_meta(ped_mat, gamma))
+    }
 }
+
 
 #' @title Mendelian sampling variance
 #'
@@ -183,6 +221,7 @@ inbreeding <- function(ped) {
 #'   relationship matrix A as TDT' where T is unit lower triangular.
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma TODO
 #' @param vector logical, return a vector or sparse matrix
 #' @return a numeric vector
 #' @export
@@ -193,21 +232,51 @@ inbreeding <- function(ped) {
 #' (D <- getD(ped))
 #' (DInv <- getDInv(ped))
 #'
-Dmat <- function(ped, vector = TRUE) {
-    F <- inbreeding(ped)
+
+Dmat <- function(ped, gamma = NULL, vector = TRUE) {
+
+    stopifnot(is(ped, "pedigree"))
+
+    nind <- length(ped@label)
     sire <- ped@sire
-    dam <- ped@dam
-    Fsire <- ifelse(is.na(sire), -1, F[sire])
-    Fdam <- ifelse(is.na(dam), -1, F[dam])
-    ans <- 1 - 0.25 * (2 + Fsire + Fdam)
-    if (vector) {
-        names(ans) <- ped@label
+    dam  <- ped@dam
+
+    if (is.null(gamma)) {
+
+        Fii <- inbreeding(ped)
+        Fsire <- ifelse(is.na(sire), -1, Fii[sire])
+        Fdam  <- ifelse(is.na(dam), -1, Fii[dam])
+        ans <- 0.5 - 0.25 * (Fsire + Fdam)
+
+        if (vector) {
+            names(ans) <- ped@label
+        } else {
+            ans <- Matrix::Diagonal(x = ans)
+            dimnames(ans) <- list(ped@label, ped@label)
+        }
+
     } else {
-        ans <- Matrix::Diagonal(x = ans)
+
+        if (vector) {
+            stop("use vector = FALSE")
+        }
+        nmf <- nrow(gamma)
+        Fii <- inbreeding(ped, gamma)
+        Fsire <- ifelse(is.na(sire), 0, Fii[sire])
+        Fdam  <- ifelse(is.na(dam), 0, Fii[dam])
+        ans <- Matrix(0, nrow = nind, ncol = nind, sparse = TRUE)
+        if (nmf < nind) {
+            for (i in (nmf + 1):nind) {
+                ans[i,i] <- 0.5 - 0.25 * (Fsire[i] + Fdam[i])
+            }
+        }
+        ans[1:nmf, 1:nmf] <- gamma
         dimnames(ans) <- list(ped@label, ped@label)
     }
     ans
 }
+
+getD <- Dmat
 
 #' @describeIn Dmat Mendelian sampling variance
 #' @export
@@ -215,14 +284,59 @@ getD <- Dmat
 
 #' @describeIn Dmat  Mendelian sampling precision (= 1 / variance)
 #' @export
-getDInv <- function(ped, vector = TRUE) {
-    ans <- 1 / getD(ped)
-    if (!vector) {
-        ans <- Matrix::Diagonal(x = ans)
+DInvmat <- function(ped, gamma = NULL, vector = TRUE) {
+
+    stopifnot(is(ped, "pedigree"))
+
+    nind <- length(ped@label)
+
+    if (is.null(gamma)) {
+
+        ans <- 1 / getD(ped, vector = TRUE)
+
+        if (vector) {
+            names(ans) <- ped@label
+        } else {
+            ans <- Matrix::Diagonal(x = ans)
+            dimnames(ans) <- list(ped@label, ped@label)
+        }
+
+    } else {
+
+        nmf <- nrow(gamma)
+
+        if (vector) {
+            stop("use vector = FALSE.")
+        }
+
+        ans <- Matrix::Diagonal(x = rep(0, nind))
+
+        if (det(gamma) != 0) {
+            ans[1:nmf, 1:nmf] <- solve(gamma)
+        } else {
+            ans[1:nmf, 1:nmf] <- MASS::ginv(gamma)
+        }
+
+        D <- getD(ped, gamma = gamma, vector = FALSE)
+        dvec <- diag(D)
+
+        if (nmf < nind) {
+            for (i in (nmf + 1):nind) {
+                ans[i, i] <- 1 / dvec[i]
+            }
+        }
+
         dimnames(ans) <- list(ped@label, ped@label)
     }
+
     ans
 }
+
+
+
+#' @describeIn DInvmat Mendelian sampling precision (= 1 / variance)
+#' @export
+getDInv <- DInvmat
 
 #' @title Inverse gene flow from a pedigree
 #'
@@ -293,22 +407,41 @@ getT <- function(ped) {
 #' (L <- getL(ped))
 #' chol(getA(ped))
 #'
-relfactor <- function(ped, labs = NULL) {
+relfactor <- function(ped, gamma = NULL, labs = NULL) {
     stopifnot(is(ped, "pedigree"))
-    if (is.null(labs)) {
-        # A = TDT' = TSST'
-        #   = LL' = R'R --> L' = ST' = R
-        return(sqrt(getD(ped, vector = FALSE)) %*% Matrix::t(getT(ped)))
+
+    if (is.null(gamma)) {
+        if (is.null(labs)) {
+            # A = TDT' = TSST'
+            #   = LL' = R'R --> L' = ST' = R
+            return(sqrt(getD(ped, vector = FALSE)) %*% Matrix::t(getT(ped)))
+        }
+        # Drop unused levels and set possible levels
+        labs <- factor(labs, levels = ped@label)
+        stopifnot(all(labs %in% ped@label))
+        # Right Cholesky factor L' = R
+        LSubset <- Matrix::chol(getASubset(ped = ped, labs = labs)) # dgCMatrix (sparse)
+        # TODO: why is LSubset dense matrix (standard) and not sparse upper triangular?
+        dimnames(LSubset) <- list(labs, labs)
+        LSubset
+    } else {
+        if (is.null(labs)) {
+            return(getD(ped, gamma, vector = FALSE)) %*% Matrix::t(getT(ped))
+            # TODO: Vector en este caso puede ser FALSO o VERDADERO, debo revisar getD
+        }
+
+        labs <- factor(labs, levels = ped@label)
+        stopifnot(all(labs %in% ped@label))
+        # Right Cholesky factor L' = R
+        LSubset <- Matrix::chol(getASubset(ped = ped, labs = labs)) # dgCMatrix (sparse)
+        # TODO: why is LSubset dense matrix (standard) and not sparse upper triangular?.. este comentario still holds?
+        dimnames(LSubset) <- list(labs, labs)
+        LSubset
     }
-    # Drop unused levels and set possible levels
-    labs <- factor(labs, levels = ped@label)
-    stopifnot(all(labs %in% ped@label))
-    # Right Cholesky factor L' = R
-    LSubset <- Matrix::chol(getASubset(ped = ped, labs = labs)) # dgCMatrix (sparse)
-    # TODO: why is LSubset dense matrix (standard) and not sparse upper triangular?
-    dimnames(LSubset) <- list(labs, labs)
-    LSubset
 }
+
+getL <- relfactor
+
 
 #' @describeIn relfactor Relationship factor from a pedigree
 #' @export
@@ -609,3 +742,4 @@ prunePed <- function(ped, selectVector, ngen = 2) {
 
   return(as.data.frame(returnPed))
 }
+

@@ -1,0 +1,177 @@
+        -:    0:Source:pedigree.c
+        -:    0:Graph:./pedigree.gcno
+        -:    0:Data:./pedigree.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include "pedigree.h"
+        -:    2:
+        -:    3:#ifdef ENABLE_NLS		/** Allow for translation of error messages */
+        -:    4:#include <libintl.h>
+        -:    5:#define _(String) dgettext ("pedigreemm", String)
+        -:    6:#else
+        -:    7:#define _(String) (String)
+        -:    8:#endif
+        -:    9:
+        -:   10:/* When appropriate, alloca is cleaner than malloc/free.  The storage
+        -:   11: * is freed automatically on return from a function. When using gcc the
+        -:   12: * builtin version is much faster. */
+        -:   13:#ifdef __GNUC__
+        -:   14:# undef alloca
+        -:   15:# define alloca(x) __builtin_alloca((x))
+        -:   16:#else
+        -:   17:/* this is necessary (and sufficient) for Solaris 10: */
+        -:   18:# ifdef __sun
+        -:   19:#  include <alloca.h>
+        -:   20:# endif
+        -:   21:#endif
+        -:   22:
+        -:   23:/** alloca n elements of type t */
+        -:   24:#define Alloca(n, t)   (t *) alloca( (size_t) ( (n) * sizeof(t) ) )
+        -:   25:
+        -:   26:/* Functions for the pedigree class */
+        -:   27:
+        -:   28:/**
+        -:   29: * Create the left Cholesky factor of the numerator relationship
+        -:   30: * matrix from a pedigree.
+        -:   31: *
+        -:   32: * @param x a pedigree object
+        -:   33: * @param ans T stored as a non-unit, lower dtCMatrix
+        -:   34: *
+        -:   35: * @return ans with elements modified to incorporate D
+        -:   36: */
+    #####:   37:SEXP pedigree_chol(SEXP x, SEXP ans)
+        -:   38:{
+    #####:   39:    SEXP Sire = GET_SLOT(x, install("sire"));
+    #####:   40:    int *ai = INTEGER(GET_SLOT(ans, install("i"))),
+    #####:   41:	*ap = INTEGER(GET_SLOT(ans, install("p"))),
+    #####:   42:	*dam = INTEGER(GET_SLOT(x, install("dam"))),
+    #####:   43:	*sire = INTEGER(Sire), j, n = LENGTH(Sire);
+    #####:   44:    double *ax = REAL(GET_SLOT(ans, install("x"))), *F, Di, tmp;
+        -:   45:
+    #####:   46:    SEXP tmp2 = PROTECT(allocVector(REALSXP, n));
+    #####:   47:    setAttrib(ans, install("F"), tmp2);
+        -:   48:
+    #####:   49:    F = REAL(getAttrib(ans, install("F")));
+    #####:   50:    for (int i = 0; i < n; i++) {
+    #####:   51:	int p = sire[i] - 1, q = dam[i] - 1;
+    #####:   52:	if (sire[i] == NA_INTEGER) {
+    #####:   53:	    F[i] = 0;
+    #####:   54:	    Di = (dam[i] == NA_INTEGER) ? 1 : sqrt(0.75 - 0.25 * F[q]);
+    #####:   55:	} else {
+    #####:   56:	    if (dam[i] == NA_INTEGER) { /* sire only */
+    #####:   57:		F[i] = 0;
+    #####:   58:		Di = sqrt(0.75 - 0.25 * F[p]);
+    #####:   59:	    } else {		/* both parents in pedigree */
+    #####:   60:		Di = sqrt(0.5 - 0.25 * (F[p] + F[q]));
+    #####:   61:		F[i] = NA_REAL;
+    #####:   62:		if ((ap[i + 1] - ap[i]) > 1) {	  /* skip if no progeny */
+    #####:   63:		    if (p > q) {j = p; p = q; q = j;} /* ensure p <= q */
+    #####:   64:		    F[i] = 0;
+    #####:   65:		    for (int j = 0; j <= p; j++) {
+    #####:   66:			tmp = 0;
+    #####:   67:			for (int k = ap[j]; k < ap[j + 1] && ai[k] <= q; k++) {
+    #####:   68:			    int ii = ai[k];
+    #####:   69:			    if (ii == p) tmp = ax[k];
+    #####:   70:			    if (ii == q) F[i] += tmp * ax[k]/2;
+    #####:   71:			}
+    #####:   72:		    }
+    #####:   73:		}
+        -:   74:	    }
+        -:   75:	}
+    #####:   76:	for (int j = ap[i]; j < ap[i + 1]; j++) ax[j] *= Di;
+    #####:   77:    }
+    #####:   78:    UNPROTECT(1);
+    #####:   79:    return ans;
+        -:   80:}
+        -:   81:
+        -:   82:/**
+        -:   83: * Create the inbreeding coefficients according to the algorithm given
+        -:   84: * in "Comparison of four direct algorithms for computing inbreeding
+        -:   85: * coefficients" by Mehdi Sargolzaei and Hiroaki Iwaisaki, Animal
+        -:   86: * Science Journal (2005) 76, 401--406.  This function is a modified
+        -:   87: * version of the code published in an appendix to that paper.
+        -:   88: *
+        -:   89: * @param x a pedigree object
+        -:   90: *
+        -:   91: * @return a list of the inbreeding coefficients
+        -:   92: */
+        -:   93:
+       29:   94:SEXP pedigree_inbreeding(SEXP x)
+        -:   95:{
+       29:   96:    SEXP ans, sp = GET_SLOT(x, install("sire"));
+       29:   97:    int i, j, t, n = LENGTH(sp), S, D;
+        -:   98:    int *SI, *MI,		/* start and minor */
+       29:   99:	*sire = INTEGER(sp),
+       29:  100:	*dam = INTEGER(GET_SLOT(x, install("dam")));
+       29:  101:    double *F = R_Calloc(n + 1, double), /* inbreeding coefficients */
+       29:  102:      *L = R_Calloc(n + 1, double), *B = R_Calloc(n + 1, double);
+       29:  103:    int *Anc = R_Calloc(n + 1, int),	/* ancestor */
+       29:  104:	*LAP = R_Calloc(n + 1, int); 	/* longest ancestoral path */
+       29:  105:    R_CheckStack();
+        -:  106:
+      203:  107:    for (i = 0; i < n; i++) {     /* Replace NA's by zeros */
+      174:  108:	if (sire[i] == NA_INTEGER) sire[i] = 0;
+      174:  109:	if (dam[i] == NA_INTEGER) dam[i] = 0;
+      174:  110:    }
+       29:  111:    F[0] =-1; LAP[0] =-1; /* set F and lap for unknown parents */
+      203:  112:    for(i = 1, t = -1; i <= n; i++) { 	/* evaluate LAP and its maximum */
+      174:  113:	S = sire[i-1]; D = dam[i-1]; /* parents of animal i-1 */
+      174:  114:	LAP[i] = ((LAP[S] < LAP[D]) ? LAP[D] : LAP[S]) + 1;
+      174:  115:	if (LAP[i] > t) t = LAP[i];
+      174:  116:    }
+       29:  117:    SI = R_Calloc(t + 1, int);
+       29:  118:    MI = R_Calloc(t + 1, int);
+      145:  119:    for(i = 0; i <= t ; ++i) SI[i] = MI[i] = 0; /* initialize start and minor */
+      203:  120:    for(i = 1; i <= n; i++) { 	/* evaluate F */
+      174:  121:	S = sire[i-1]; D = dam[i-1]; /* parents of animal i */
+      174:  122:	B[i] = 0.5 - 0.25 * (F[S] + F[D]);
+        -:  123:				/* adjust start and minor */
+      377:  124:	for (j = 0; j < LAP[i]; j++) {++SI[j]; ++MI[j];}
+      174:  125:	if (S == 0 || D == 0) { /* both parents unknown */
+       87:  126:	    F[i] = L[i] = 0; continue;
+        -:  127:	}
+        -:  128:	/*if(S == sire[i-2] && D == dam[i-2]) { full-sib with last animal
+        -:  129:	   F[i] = F[i-1]; L[i] = L[i-1]; continue;
+        -:  130:	}*/
+       87:  131:	if (i > 1 && S == sire[i-2] && D == dam[i-2]) {
+    #####:  132:	    F[i] = F[i-1];
+    #####:  133:	    L[i] = L[i-1];
+    #####:  134:	    continue;
+        -:  135:	}
+        -:  136:
+       87:  137:	F[i] = -1; L[i] = 1;
+       87:  138:	t = LAP[i]; /* largest lap group number in the animal's pedigree */
+       87:  139:	Anc[MI[t]++] = i; /* initialize Anc and increment MI[t] */
+      493:  140:	while(t > -1) { /* from the largest lap group to zero */
+      406:  141:	    j = Anc[--MI[t]]; /* next ancestor */
+      406:  142:	    S = sire[j-1]; D = dam[j-1]; /* parents of the ancestor */
+      406:  143:	    if (S) {
+      232:  144:		if (!L[S]) Anc[MI[LAP[S]]++] = S;
+        -:  145:				/* add sire in its lap group in Anc
+        -:  146:				 * array if it is not added yet and
+        -:  147:				 * increment the minor index for the group */
+      232:  148:		L[S] += 0.5 * L[j]; /* contribution to sire */
+      232:  149:	    }
+      406:  150:	    if (D) {
+      174:  151:		if (!L[D]) Anc[MI[LAP[D]]++] = D;
+      174:  152:		L[D] += 0.5 * L[j]; /* contribution to dam */
+      174:  153:	    }
+      406:  154:	    F[i] += L[j] * L[j] * B[j];
+      406:  155:	    L[j] = 0; /*clear L[j] for the evaluation of the next animal */
+      406:  156:	    if (MI[t] == SI[t]) --t; /* move to the next lap group when
+        -:  157:				      * all ancestors in group t have been
+        -:  158:				      * evaluated */
+        -:  159:	}
+       87:  160:    }
+       29:  161:    ans = PROTECT(allocVector(REALSXP, n));
+       29:  162:    Memcpy(REAL(ans), F + 1, n);
+        -:  163:
+      203:  164:    for (i = 0; i < n; i++) {     /* Restore the NA's */
+      174:  165:	if (!sire[i]) sire[i] = NA_INTEGER;
+      174:  166:	if (!dam[i]) dam[i] = NA_INTEGER;
+      174:  167:    }
+       29:  168:    R_Free(F); R_Free(L); R_Free(B); R_Free(Anc); R_Free(LAP); R_Free(SI); R_Free(MI);
+       29:  169:    UNPROTECT(1);
+       29:  170:    return ans;
+        -:  171:}
+        -:  172:
