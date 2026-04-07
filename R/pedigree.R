@@ -157,42 +157,17 @@ setMethod("chol", "pedigree",
 
 #' @title Inbreeding coefficients from a pedigree
 #'
-#' @description Create the inbreeding coefficients according to the algorithm
-#'   given in "Comparison of four direct algorithms for computing inbreeding
-#'   coefficients" by Mehdi Sargolzaei and Hiroaki Iwaisaki, Animal Science
-#'   Journal (2005) 76, 401--406.
-#'
+#' @description Create the inbreeding coefficients for a pedigree without metafounders
+#'              according to the algorithm given in "Comparison of four direct algorithms for computing inbreeding
+#'              coefficients" by Mehdi Sargolzaei and Hiroaki Iwaisaki, Animal Science Journal (2005) 76, 401--406.
+#'              The method used for pedigree with metafounders is based on the algorithm proposed
+#'              by Legarra et al. (2015). Ancestral Relationships Using Metafounders: Finite Ancestral
+#'              Populations and Across Population Relationships.
+#'              Genetics. Jun;200(2):455-68. doi: 10.1534/genetics
 #' @param ped \code{\link{pedigree}}
-#' @param gamma TODO
+#' @param gamma a matrix type with the size equal to the numer of metafounders
 #' @return the inbreeding coefficients as a numeric vector
 #' @export
-#  @useDynLib pedigreeTools pedigree_inbreeding
-#' @examples
-#'
-#' Without metafounders
-#' ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
-#'                 dam =  c(NA, NA, 2, NA, 3, 2),
-#'                 label = 1:6)
-#'
-#' Test
-#' (F <- inbreeding(ped))
-#' (Fexp <- c(0.000, 0.000, 0.000, 0.000, 0.125, 0.125))
-#'
-#'#' With metafounders
-#'
-#' ped_met <- pedigree(
-#'     sire = ped_diff$sire,
-#'     ped_diff$dam,
-#'     ped_diff$label
-#'     )
-#'
-#' gamma <- matrix(c(0.1, 0.05, 0.05, 0.2), nrow = 2, byrow = TRUE)
-#'
-#' Test
-#' (F_met <- inbreeding(ped, gamma))
-#' (Fexp_met <- c(-0.90000, -0.80000, 0.02500, 0.00000, 0.01875, 0.03750))
-#'
-
 
 inbreeding <- function(ped, gamma = NULL) {
 
@@ -225,13 +200,6 @@ inbreeding <- function(ped, gamma = NULL) {
 #' @param vector logical, return a vector or sparse matrix
 #' @return a numeric vector
 #' @export
-#' @examples
-#' ped <- pedigree(sire = c(NA, NA, 1,  1, 4, 5),
-#'                 dam =  c(NA, NA, 2, NA, 3, 2),
-#'                 label = 1:6)
-#' (D <- getD(ped))
-#' (DInv <- getDInv(ped))
-#'
 
 Dmat <- function(ped, gamma = NULL, vector = TRUE) {
 
@@ -742,4 +710,8 @@ prunePed <- function(ped, selectVector, ngen = 2) {
 
   return(as.data.frame(returnPed))
 }
+
+
+
+
 

@@ -58,7 +58,11 @@ test_that("Mendelian sampling variance - Case 3: Two metafounders", {
     DExp[1:2, 1:2] <- gamma_multi
     dimnames(DExp) <- list(ped_multi@label, ped_multi@label)
 
-
     expect_equal(DEst, DExp, tolerance = 1e-8)
 })
+
+
+
+
+
 
