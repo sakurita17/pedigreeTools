@@ -81,7 +81,7 @@ test_that("inbreeding - Case 4: Two metafounders crosses between them", {
     expect_equal(FEst, FExp, tolerance = 1e-9)
 })
 
-# Case 6: Two metafounders crosses between metafounder and indviduals
+# Case 5: Two metafounders crosses between metafounder and indviduals
 
 test_that("inbreeding - Case 5: Two metafounders crosses between metafounder and indvidual", {
 

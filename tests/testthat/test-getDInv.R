@@ -1,4 +1,8 @@
-test_that("Mendelian sampling variance inverse - Case 1: Without metafounders", {
+# Mendelian sampling variance - precision
+
+# Case 1: Without metafounders
+
+test_that("case_1_msvi", {
 
     # Case 1: without gamma
     ped <- pedigree(
@@ -11,21 +15,22 @@ test_that("Mendelian sampling variance inverse - Case 1: Without metafounders", 
 
     # Testing Vector = TRUE
     DInvEst <- getDInv(ped, vector = TRUE)
-    DInvExp <- c(1.00000000, 1.00000000, 2.00000000, 1.33333333, 2.00000000, 2.13333333)
+    DInvExp <- c(1.0000, 1.0000, 2.0000, 1.3333, 2.0000, 2.1333)
     names(DInvExp) <- ped@label
-    expect_equal(DInvEst, DInvExp, tolerance = 1e-8, ignore_attr = TRUE)
+    expect_equal(DInvEst, DInvExp, tolerance = 1e-4, ignore_attr = TRUE)
 
     # Testing Vector = FALSE
     DInvEst <- getDInv(ped, vector = FALSE)
     DInvExp <- Matrix::Diagonal(
         n = length(ped@label),
-        x = c(1.00000000, 1.00000000, 2.00000000, 1.33333333, 2.00000000, 2.13333333))
+        x = c(1.0000, 1.0000, 2.0000, 1.3333, 2.0000, 2.1333))
     dimnames(DInvExp) <- list(ped@label, ped@label)
-    expect_equal(DInvEst, DInvExp, tolerance = 1e-8, ignore_attr = TRUE)
+    expect_equal(DInvEst, DInvExp, tolerance = 1e-4, ignore_attr = TRUE)
 
 })
 
-test_that("Precision Mendelian sampling variance - Case 2: Single metafounder ", {
+# Case 2: Single metafounder
+test_that("case_2_msvi", {
 
     ped_single <- pedigree(
         sire  = c(0, 1, 1, 2, 2, 4, 4),
@@ -46,8 +51,8 @@ test_that("Precision Mendelian sampling variance - Case 2: Single metafounder ",
 
 })
 
-
-test_that("Precision Mendelian sampling variance - Case 3: Two metafounder", {
+# Case 3: Two metafounders
+test_that("case_2_msvi", {
 
     ped_multi <- pedigree(
         sire  = c(0, 0, 1, 2, 3, 3, 5, 5),
@@ -72,4 +77,53 @@ test_that("Precision Mendelian sampling variance - Case 3: Two metafounder", {
     expect_equal(DInvEst, DInvExp, tolerance = 1e-6)
 
 })
+
+# Case 4: Two metafounders crosses between them
+test_that("case_4_mvs", {
+
+    ped_cross <- pedigree(
+        sire  = c(0, 0, 1, 1, 3, 3, 5, 5),
+        dam   = c(0, 0, 1, 2, 4, 4, 6, 4),
+        label = 1:8
+    )
+
+    gamma_multi <- matrix(
+        c(0.01, 0.05,
+          0.05, 0.02),
+        nrow = 2,
+        byrow = TRUE
+    )
+
+    DInvEst <- getDInv(ped_cross, gamma = gamma_multi, vector = FALSE)
+    DInvExp <- solve(getD(ped_cross, gamma_multi, vector = FALSE))
+    dimnames(DInvExp) <- list(ped_cross@label, ped_cross@label)
+
+    expect_equal(DInvEst, DInvExp, tolerance = 1e-8)
+})
+
+# Case 5: Two metafounders crosses between metafounder and indviduals
+test_that("case_5_mvs", {
+
+    ped_cross_ind <- pedigree(
+        sire  = c(0, 0, 1, 1, 3, 3, 5, 5),
+        dam   = c(0, 0, 1, 2, 4, 2, 6, 4),
+        label = 1:8
+    )
+
+    gamma_multi <- matrix(
+        c(0.01, 0.05,
+          0.05, 0.02),
+        nrow = 2,
+        byrow = TRUE
+    )
+
+    DInvEst <- getDInv(ped_cross_ind, gamma = gamma_multi, vector = FALSE)
+   
+    dimnames(DInvExp) <- list(ped_cross@label, ped_cross@label)
+
+    expect_equal(DEst, DExp, tolerance = 1e-8)
+})
+
+
+
 

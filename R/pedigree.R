@@ -165,7 +165,7 @@ setMethod("chol", "pedigree",
 #'              Populations and Across Population Relationships.
 #'              Genetics. Jun;200(2):455-68. doi: 10.1534/genetics
 #' @param ped \code{\link{pedigree}}
-#' @param gamma a matrix type with the size equal to the numer of metafounders
+#' @param gamma single number or matrix descring relationship between metafounder
 #' @return the inbreeding coefficients as a numeric vector
 #' @export
 
@@ -196,7 +196,7 @@ inbreeding <- function(ped, gamma = NULL) {
 #'   relationship matrix A as TDT' where T is unit lower triangular.
 #'
 #' @param ped \code{\link{pedigree}}
-#' @param gamma TODO
+#' @param gamma single number or matrix descring relationship between metafounder
 #' @param vector logical, return a vector or sparse matrix
 #' @return a numeric vector
 #' @export
@@ -243,8 +243,6 @@ Dmat <- function(ped, gamma = NULL, vector = TRUE) {
     }
     ans
 }
-
-getD <- Dmat
 
 #' @describeIn Dmat Mendelian sampling variance
 #' @export
