@@ -116,13 +116,13 @@ test_that("case_5_mvs", {
         nrow = 2,
         byrow = TRUE
     )
-
+    
     DInvEst <- getDInv(ped_cross_ind, gamma = gamma_multi, vector = FALSE)
-   
-    dimnames(DInvExp) <- list(ped_cross@label, ped_cross@label)
+    DInvExp <- solve(getD(ped_cross_ind, gamma_multi, vector = FALSE))
+    dimnames(DInvExp) <- list(ped_cross_ind@label, ped_cross_ind@label)
 
-    expect_equal(DEst, DExp, tolerance = 1e-8)
-})
+    expect_equal(DInvEst, DInvExp, tolerance = 1e-8)}
+)
 
 
 

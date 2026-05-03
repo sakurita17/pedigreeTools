@@ -4,7 +4,7 @@
 \alias{getASubset}
 \title{Subset of additive relationship matrix}
 \usage{
-getASubset(ped, labs)
+getASubset(ped, labs, gamma = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}

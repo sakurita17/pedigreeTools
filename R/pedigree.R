@@ -343,6 +343,8 @@ getT <- function(ped) {
     T
 }
 
+
+
 #' @title Relationship factor from a pedigree
 #'
 #' @description Determine the right Cholesky factor of the relationship matrix
@@ -350,6 +352,7 @@ getT <- function(ped) {
 #'   that occur in \code{labs}.
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma 
 #' @param labs a character vector or a factor giving individual labels to
 #'   which to restrict the relationship matrix and corresponding factor using
 #'   Colleau et al. (2002) algorithm. If \code{labs} is a factor then the levels
@@ -373,42 +376,49 @@ getT <- function(ped) {
 #' (L <- getL(ped))
 #' chol(getA(ped))
 #'
+
 relfactor <- function(ped, gamma = NULL, labs = NULL) {
     stopifnot(is(ped, "pedigree"))
 
-    if (is.null(gamma)) {
-        if (is.null(labs)) {
-            # A = TDT' = TSST'
-            #   = LL' = R'R --> L' = ST' = R
+    if (is.null(labs)) {
+
+        if (is.null(gamma)) {
             return(sqrt(getD(ped, vector = FALSE)) %*% Matrix::t(getT(ped)))
         }
-        # Drop unused levels and set possible levels
-        labs <- factor(labs, levels = ped@label)
-        stopifnot(all(labs %in% ped@label))
-        # Right Cholesky factor L' = R
-        LSubset <- Matrix::chol(getASubset(ped = ped, labs = labs)) # dgCMatrix (sparse)
-        # TODO: why is LSubset dense matrix (standard) and not sparse upper triangular?
-        dimnames(LSubset) <- list(labs, labs)
-        LSubset
-    } else {
-        if (is.null(labs)) {
-            return(getD(ped, gamma, vector = FALSE)) %*% Matrix::t(getT(ped))
-            # TODO: Vector en este caso puede ser FALSO o VERDADERO, debo revisar getD
+
+        D <- getD(ped, gamma = gamma, vector = FALSE)
+        T <- getT(ped)
+
+        nmf <- nrow(gamma)
+        nind <- length(ped@label)
+
+        C <- Matrix::Matrix(0, nrow = nind, ncol = nind, sparse = TRUE)
+
+        C[seq_len(nmf), seq_len(nmf)] <- Matrix::chol(gamma)
+
+        if (nmf < nind) {
+            idx <- (nmf + 1):nind
+            d <- Matrix::diag(D)[idx]
+            C[cbind(idx, idx)] <- sqrt(d)
         }
 
-        labs <- factor(labs, levels = ped@label)
-        stopifnot(all(labs %in% ped@label))
-        # Right Cholesky factor L' = R
-        LSubset <- Matrix::chol(getASubset(ped = ped, labs = labs)) # dgCMatrix (sparse)
-        # TODO: why is LSubset dense matrix (standard) and not sparse upper triangular?.. este comentario still holds?
-        dimnames(LSubset) <- list(labs, labs)
-        LSubset
+        dimnames(C) <- list(ped@label, ped@label)
+
+        R <- C %*% Matrix::t(T)
+        dimnames(R) <- list(ped@label, ped@label)
+
+        return(R)
     }
+
+    labs <- factor(labs, levels = ped@label)
+    stopifnot(all(labs %in% ped@label))
+
+    ASubset <- getASubset(ped = ped, labs = labs, gamma = gamma)
+    LSubset <- Matrix::chol(ASubset)
+    dimnames(LSubset) <- list(labs, labs)
+
+    LSubset
 }
-
-getL <- relfactor
-
-
 #' @describeIn relfactor Relationship factor from a pedigree
 #' @export
 getL <- relfactor
@@ -424,6 +434,7 @@ getL <- relfactor
 #'   triangular).
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma single number or matrix descring relationship between metafounder
 #' @return matrix (\link[Matrix]{dtCMatrix-class} - triangular sparse)
 #' @export
 #' @examples
@@ -433,20 +444,36 @@ getL <- relfactor
 #' (LInv <- getLInv(ped))
 #' solve(Matrix::t(getL(ped)))
 #'
-relfactorInv <- function(ped) {
-    # A = LL' (lower %*% upper)
-    # inv(A) = inv(LL')
-    #        = inv(L') inv(L) (upper %*% lower)
-    #        = inv(L)' inv(L) (upper %*% lower)
-    # A = TDT' (lower %*% diag %*% upper)
-    # inv(A) = inv(TDT')
-    #        = inv(T') inv(D) inv(T) (upper %*% diag %*% lower)
-    #        = inv(T)' inv(D) inv(T) (upper %*% diag %*% lower)
-    # --> We must premultiply inv(T) with sqrt(inv(D))
-    TInv <- getTInv(ped) # dtCMatrix (lower triangular sparse)
-    DSqInv <- Matrix::Diagonal(x = sqrt(getDInv(ped))) # ddiMatrix (diagonal sparse)
-    LInv <- DSqInv %*% TInv  # dtCMatrix (lower triangular sparse)
+relfactorInv <- function(ped, gamma = NULL) {
+    stopifnot(is(ped, "pedigree"))
+
+    TInv <- getTInv(ped)
+
+    if (is.null(gamma)) {
+        DSqInv <- Matrix::Diagonal(x = sqrt(getDInv(ped)))
+        LInv <- DSqInv %*% TInv
+        dimnames(LInv) <- list(ped@label, ped@label)
+        return(LInv)
+    }
+
+    DInv <- getDInv(ped, gamma = gamma, vector = FALSE)
+
+    nmf <- nrow(gamma)
+    nind <- length(ped@label)
+
+    CInv <- Matrix::Matrix(0, nrow = nind, ncol = nind, sparse = TRUE)
+
+    CInv[seq_len(nmf), seq_len(nmf)] <- Matrix::chol(Matrix::solve(gamma))
+
+    if (nmf < nind) {
+        idx <- (nmf + 1):nind
+        dInv <- Matrix::diag(DInv)[idx]
+        CInv[cbind(idx, idx)] <- sqrt(dInv)
+    }
+
+    LInv <- CInv %*% TInv
     dimnames(LInv) <- list(ped@label, ped@label)
+
     LInv
 }
 
@@ -460,6 +487,7 @@ getLInv <- relfactorInv
 #'   pedigree.
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma single number or matrix descring relationship between metafounder
 #' @return matrix (\link[Matrix]{dsCMatrix-class} - symmetric sparse)
 #' @export
 #' @examples
@@ -468,14 +496,21 @@ getLInv <- relfactorInv
 #'                 label = 1:6)
 #' (AInv <- getAInv(ped))
 #'
-getAInv <- function(ped) {
+getAInv <- function(ped, gamma = NULL) {
     # A = LL' (lower %*% upper)
     # inv(A) = inv(LL')
     #        = inv(L') inv(L) (upper %*% lower)
     #        = inv(L)' inv(L) (upper %*% lower)
     # crossprod() does X'X --> inv(L)' inv(L)
     stopifnot(is(ped, "pedigree"))
-    AInv <- Matrix::crossprod(getLInv(ped)) # dsCMatrix (symmetric sparse)
+    if (is.null(gamma)) {
+        AInv <- Matrix::crossprod(getLInv(ped)) # dsCMatrix (symmetric sparse)
+    } else {
+        TInv <- getTInv(ped)
+        DInv <- getDInv(ped, gamma = gamma, vector = FALSE)
+        AInv <- Matrix::t(TInv) %*% DInv %*% TInv
+    }
+    AInv <- Matrix::forceSymmetric(AInv, uplo = "U")
     dimnames(AInv) <- list(ped@label, ped@label)
     AInv
 }
@@ -485,6 +520,7 @@ getAInv <- function(ped) {
 #' @description Returns the additive relationship matrix for the pedigree.
 #'
 #' @param ped \code{\link{pedigree}}
+#' @param gamma single number or matrix descring relationship between metafounder
 #' @param labs a character vector or a factor giving individual labels to
 #'   which to restrict the relationship matrix and corresponding factor. If
 #'   \code{labs} is a factor then the levels of the factor are used as the
@@ -498,14 +534,23 @@ getAInv <- function(ped) {
 #'                 label = 1:6)
 #' (A <- getA(ped))
 #'
-getA <- function(ped, labs = NULL) {
+getA <- function(ped, gamma = NULL, labs = NULL) {
+    stopifnot(is(ped, "pedigree"))
+
     if (is.null(labs)) {
-        # A = LL' = R'R
-        # crossprod() does X'X --> R'R
-        aMx <- Matrix::crossprod(getL(ped, labs = labs))
+        if (is.null(gamma)) {
+            # A = LL' = R'R
+            # crossprod() does X'X --> R'R
+            aMx <- Matrix::crossprod(getL(ped))
+        } else {
+            T <- getT(ped)
+            D <- getD(ped, gamma = gamma, vector = FALSE)
+            aMx <- T %*% D %*% Matrix::t(T)
+        }
+        aMx <- Matrix::forceSymmetric(aMx, uplo = "U")
         dimnames(aMx) <- list(ped@label, ped@label)
     } else {
-        aMX <- getASubset(ped = ped, labs = labs)
+        aMx <- getASubset(ped = ped, labs = labs, gamma = gamma)
     }
     aMx
 }
@@ -538,27 +583,59 @@ getA <- function(ped, labs = NULL) {
 #' (ASubset3  <- A[6:4, 6:4])
 #' (ASubset4 <- getASubset(ped, labs = 6:4))
 #'
-getASubset <- function(ped, labs) {
-    stopifnot(is(ped, "pedigree"))
-    stopifnot(!missing(labs))
-    nLabs <- length(labs)
-    nInd <- length(ped@label)
+#getASubset <- function(ped, labs) {
+#    stopifnot(is(ped, "pedigree"))
+#    stopifnot(!missing(labs))
+##    nLabs <- length(labs)
+#    nInd <- length(ped@label)
     # A x = y; if x is all 0s and a 1 in the k-th position then y is A[, k]
     # inv(A) A x = inv(A) y
     # inv(A) y = x; solve for y to get A[, k] - column
     # inv(A) Y = X; solve for Y to get A[, k] - matrix
-    numLabs <- match(x = labs, table = ped@label, nomatch = 0)
-    check <- numLabs == 0
-    if (any(check)) {
-        stop(paste0("These labs are no present in the pedigree: ", labs[check]))
+#    numLabs <- match(x = labs, table = ped@label, nomatch = 0)
+#    check <- numLabs == 0
+#    if (any(check)) {
+#        stop(paste0("These labs are no present in the pedigree: ", labs[check]))
+#    }
+#    X <- Matrix::sparseMatrix(i = numLabs, j = 1:nLabs,
+#                              x = 1, dims = c(nInd, nLabs)) # dgCMatrix (sparse)
+#    ASubset <- Matrix::solve(getAInv(ped), X)[numLabs, ] # dgCMatrix (sparse)
+#    ASubset <- as(ASubset, "symmetricMatrix") # dsCMatrix (sparse)
+#    dimnames(ASubset) <- list(labs, labs)
+#    ASubset
+#}
+
+getASubset <- function(ped, labs, gamma = NULL) {
+    stopifnot(is(ped, "pedigree"))
+    stopifnot(!missing(labs))
+
+    labs <- factor(labs, levels = ped@label)
+    stopifnot(all(labs %in% ped@label))
+
+    nLabs <- length(labs)
+    nInd <- length(ped@label)
+    numLabs <- as.numeric(labs)
+
+    X <- Matrix::sparseMatrix(
+        i = numLabs,
+        j = seq_len(nLabs),
+        x = 1,
+        dims = c(nInd, nLabs)
+    )
+
+    if (is.null(gamma)) {
+        AInv <- getAInv(ped)
+    } else {
+        AInv <- getAInv(ped, gamma = gamma)
     }
-    X <- Matrix::sparseMatrix(i = numLabs, j = 1:nLabs,
-                              x = 1, dims = c(nInd, nLabs)) # dgCMatrix (sparse)
-    ASubset <- Matrix::solve(getAInv(ped), X)[numLabs, ] # dgCMatrix (sparse)
-    ASubset <- as(ASubset, "symmetricMatrix") # dsCMatrix (sparse)
+
+    ASubset <- Matrix::solve(AInv, X)[numLabs, , drop = FALSE]
+    ASubset <- as(ASubset, "symmetricMatrix")
     dimnames(ASubset) <- list(labs, labs)
+
     ASubset
 }
+
 
 #' @title Counts number of generations of ancestors for one subject. Use recursion.
 #'
@@ -708,8 +785,3 @@ prunePed <- function(ped, selectVector, ngen = 2) {
 
   return(as.data.frame(returnPed))
 }
-
-
-
-
-

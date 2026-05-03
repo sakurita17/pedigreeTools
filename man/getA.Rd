@@ -4,10 +4,12 @@
 \alias{getA}
 \title{Additive relationship matrix}
 \usage{
-getA(ped, labs = NULL)
+getA(ped, gamma = NULL, labs = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
+
+\item{gamma}{single number or matrix descring relationship between metafounder}
 
 \item{labs}{a character vector or a factor giving individual labels to
 which to restrict the relationship matrix and corresponding factor. If

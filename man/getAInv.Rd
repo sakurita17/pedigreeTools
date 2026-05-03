@@ -4,10 +4,12 @@
 \alias{getAInv}
 \title{Inverse of the additive relationship matrix}
 \usage{
-getAInv(ped)
+getAInv(ped, gamma = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
+
+\item{gamma}{single number or matrix descring relationship between metafounder}
 }
 \value{
 matrix (\link[Matrix]{dsCMatrix-class} - symmetric sparse)

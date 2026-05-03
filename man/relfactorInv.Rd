@@ -5,12 +5,14 @@
 \alias{getLInv}
 \title{Inverse relationship factor from a pedigree}
 \usage{
-relfactorInv(ped)
+relfactorInv(ped, gamma = NULL)
 
-getLInv(ped)
+getLInv(ped, gamma = NULL)
 }
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
+
+\item{gamma}{single number or matrix descring relationship between metafounder}
 }
 \value{
 matrix (\link[Matrix]{dtCMatrix-class} - triangular sparse)

@@ -12,6 +12,8 @@ getL(ped, gamma = NULL, labs = NULL)
 \arguments{
 \item{ped}{\code{\link{pedigree}}}
 
+\item{gamma}{}
+
 \item{labs}{a character vector or a factor giving individual labels to
 which to restrict the relationship matrix and corresponding factor using
 Colleau et al. (2002) algorithm. If \code{labs} is a factor then the levels
